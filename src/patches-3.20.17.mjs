@@ -1,3 +1,4 @@
+import {patchSubagentBubbles} from './subagent-bubbles.mjs';
 import {buildAutostart} from './autostart.mjs';
 import {usageSectionSrc} from './usage-section.mjs';
 import fs from 'node:fs';
@@ -74,7 +75,7 @@ wb=addUsage(wb,{fn:'function e_y(e){const t=Mfp(119)',jsx:'Kby',
   original:'title:"Plan & Usage",children:[yn,an,Kt,xn]',
   claudeOnly:'title:"Plan & Usage",children:[yn,an,Kt,xn,Kby(__claudeUsageSection,{})]',
   symbols:{jsx:'Kby',useState:'Glr',useEffect:'iby',card:'__',zs:'zs',bar:'xA',barStyle:'Qlr'}});
-wb=patchRemoteRouting(wb,'desktop','3.20.17');
+wb=patchSubagentBubbles(patchRemoteRouting(wb,'desktop','3.20.17'),'desktop');
 pending.push({path:workbenchPath,content:wb});
 const glassPath=path.join(root,'out/vs/workbench/workbench.glass.main.js');
 let glass=prelude+fs.readFileSync(glassPath,'utf8');
@@ -104,7 +105,7 @@ glass=addUsage(glass,{fn:'function Az1(t){const e=o3g(119)',jsx:'Ez1',
   original:'title:"Plan & Usage",children:[ft,wt,gt,Tt]',
   claudeOnly:'title:"Plan & Usage",children:[ft,wt,gt,Tt,Ez1(__claudeUsageSection,{})]',
   symbols:{jsx:'Ez1',useState:'Sus',useEffect:'Tz1',card:'iv',zs:'Js',bar:'Im',barStyle:'CTi'}});
-glass=patchRemoteRouting(glass,'glass','3.20.17');
+glass=patchSubagentBubbles(patchRemoteRouting(glass,'glass','3.20.17'),'glass');
 pending.push({path:glassPath,content:glass});
 for(const relative of ['extensions/cursor-agent-exec/dist/main.js','extensions/cursor-local-agent-runtime/dist/main.js']){
  pending.push({path:path.join(root,relative),content:wrapRuntime(fs.readFileSync(path.join(root,relative),'utf8'))});

@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {buildPatches} from '../src/patches.mjs';
 import {supportedBuild} from '../src/supported-builds.mjs';
+import {verifySubagentRegistration} from './subagent-registration-check.mjs';
 import {verifyWorkbenchRouting} from './workbench-routing-check.mjs';
 
 const root = process.argv[2];
@@ -29,6 +30,7 @@ try {
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
       await verifyWorkbenchRouting(file.content, build.version);
+      if(build.version==='3.20.17')await verifySubagentRegistration(file.content);
       console.log('Native workbench SSH routing and workspace resources: passed');
     }
     if (!file.path.includes('cursor-agent-exec') && !file.path.includes('cursor-local-agent-runtime')) continue;

@@ -26,7 +26,7 @@ The reviewed hashes are in [the 3.20.17 metadata](../src/supported-build-3.20.17
 
 ## Automated checks
 
-All 24 public unit tests passed locally. They cover partial model refreshes, explicit model hiding, account-separated saved catalogs, supported reasoning and Fast combinations, the default speed setting, request normalization, unsupported settings, local bearer authentication and browser-origin rejection. Installation tests verify exact restoration, refusal of changed application files or damaged backups, and resuming an interrupted restore. Remote routing tests check runtime selection, extension activation and preservation of workspace resources and cancellation signals in both workbenches. Additional checks cover the icon labels, subscription usage mapping, quota errors, and exact bridge-process selection on restart. Tests use synthetic data without access to a real account.
+All 29 public unit tests passed locally. They cover partial model refreshes, explicit model hiding, account-separated saved catalogs, supported reasoning and Fast combinations, the default speed setting, request normalization, unsupported settings, local bearer authentication and browser-origin rejection. Installation tests verify exact restoration, refusal of changed application files or damaged backups, and resuming an interrupted restore. Remote routing tests check runtime selection, extension activation and preservation of workspace resources and cancellation signals in both workbenches. Additional checks cover the icon labels, subscription usage mapping, quota errors, and exact bridge-process selection on restart. Tests use synthetic data without access to a real account.
 
 The GitHub workflow runs this suite on Windows with Node.js 22, 24 and 26. These unit jobs do not contain or test a real Cursor installation.
 
@@ -84,3 +84,11 @@ The local prototype returned a successful ChatGPT response after the update, and
 On September 11, 2026, the installed local GPT bridge with GPT-5.6 Luna identified a generated PNG color and read a validation word embedded only in a PDF. No conversion or text extraction was needed in the bridge. Unit coverage verifies that image and PDF bytes and tool-call history survive normalization, and vision capability follows the model catalog. The request-body ceiling is now 64 MiB including base64 overhead. Separate attachment testing through each Cursor window and SSH is still pending.
 
 See [OpenAI file inputs](https://developers.openai.com/api/docs/guides/file-inputs) for the public input schema; the live check validates the subscription endpoint separately.
+
+## Local ChatGPT subagent startup
+
+On September 13, 2026, an SSH Agents Window session on Cursor 3.20.17 reported `Timeout waiting for bubble creation` for both explore and general-purpose subagents. The renderer received the requests, but the native parent Task registration barrier expired before inference started.
+
+The 3.20.17 ChatGPT patch now creates a missing parent Task bubble through Cursor's existing ToolFormer method before entering that barrier. The repair applies only to ChatGPT subagent requests whose loaded parent also uses a ChatGPT model. Existing bubbles are retained. Cancelled requests cannot create a bubble, and a missing parent or capability still follows the original failure path. The registry is signalled only after the native lookup finds a real bubble.
+
+Five regression tests cover creation, duplicate prevention, provider scope, cancellation and unavailable parent state. Build verification executes the actual desktop and Agents Window registration methods: the missing-bubble case fails without the repair and passes with it. Both patch manifests and backups were verified after installation. A new manual SSH subagent result is still pending; these checks do not establish a completed remote task or approval-flow coverage.

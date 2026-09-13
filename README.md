@@ -25,6 +25,8 @@ This release targets the reviewed Windows builds listed below. It is not a gener
 
 Cursor 3.20.17 has its own reviewed patch definitions; support for 3.20.11 and 3.20.7 is retained. The installer selects a version-specific patch and checks the version, commit and SHA-256 hashes of five original JavaScript bundles. It stops before patching an unknown or already modified build. Automated checks passed on 3.20.17; a new manual UI test is still pending. See [testing notes](docs/testing.md) for the scope of verification.
 
+On Cursor 3.20.17, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration. The repair passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation. See the testing notes for details.
+
 ## What it adds
 
 OAuth models appear with a small OpenAI symbol before their names in the model picker, in their own **ChatGPT Subscription** section. Native Cursor models stay under **Cursor Models**. If cursor-claude-link is also installed, Claude models appear under **Claude Subscription**. Install ChatGPT first and Claude second. Remove them in reverse order because both modify the same Cursor files. The list comes from your local Codex model catalog, including each model's supported reasoning levels. The patch does not ship a fixed model list or grant access to models your account cannot use.
