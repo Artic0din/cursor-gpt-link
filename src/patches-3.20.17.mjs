@@ -1,3 +1,4 @@
+import {patchSubagentModel} from './subagent-model.mjs';
 import {patchSubagentBubbles} from './subagent-bubbles.mjs';
 import {buildAutostart} from './autostart.mjs';
 import {usageSectionSrc} from './usage-section.mjs';
@@ -108,7 +109,7 @@ glass=addUsage(glass,{fn:'function Az1(t){const e=o3g(119)',jsx:'Ez1',
 glass=patchSubagentBubbles(patchRemoteRouting(glass,'glass','3.20.17'),'glass');
 pending.push({path:glassPath,content:glass});
 for(const relative of ['extensions/cursor-agent-exec/dist/main.js','extensions/cursor-local-agent-runtime/dist/main.js']){
- pending.push({path:path.join(root,relative),content:wrapRuntime(fs.readFileSync(path.join(root,relative),'utf8'))});
+ pending.push({path:path.join(root,relative),content:patchSubagentModel(wrapRuntime(fs.readFileSync(path.join(root,relative),'utf8')))});
 }
 const mainPath=path.join(root,'out/main.js');
 pending.push({path:mainPath,content:fs.readFileSync(mainPath,'utf8')+buildAutostart({nodePath,bridgePath,stateDir})});

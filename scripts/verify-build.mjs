@@ -1,3 +1,4 @@
+import {verifySubagentModels} from './subagent-model-check.mjs';
 // Opt-in local verification against an original supported Cursor installation.
 // Bundled application code is read locally and is never included in this repository.
 import fs from 'node:fs';
@@ -34,6 +35,7 @@ try {
       console.log('Native workbench SSH routing and workspace resources: passed');
     }
     if (!file.path.includes('cursor-agent-exec') && !file.path.includes('cursor-local-agent-runtime')) continue;
+    if(build.version==='3.20.17')await verifySubagentModels(file.content);
     const start = file.content.indexOf('function(e,t,n,r,o,s=!1,i){const a=function(e){');
     assert.ok(start >= 0, 'Normalizer function found');
     const end = file.content.indexOf(file.path.includes('cursor-agent-exec') ? '}(c,t,n,r,o,null!=s&&s,a)' : '}(u,t,n,r,o,null!=s&&s,a)', start);

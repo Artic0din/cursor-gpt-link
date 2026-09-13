@@ -31,3 +31,22 @@ test('missing parent or ToolFormer does not signal a successful creation',()=>{
  const f=fixture();f.service.getComposerCapability=()=>undefined;f.run();assert.equal(f.created.length,0);
  ensureChatgptTaskBubble(f.service,f.request,undefined,19,Object,3);assert.equal(f.created.length,0);
 });
+
+import {normalizeChatgptSubagentModel} from '../src/subagent-model.mjs';
+test('blank optional Task models use native inheritance without mutating input',()=>{
+ for(const requestedModel of ['', '  ']){
+  const input={parentModelId:'chatgpt-codex/test',requestedModel,forceModelId:'policy-model'};
+  const result=normalizeChatgptSubagentModel(input);
+  assert.equal(result.requestedModel,undefined);assert.equal(result.forceModelId,'policy-model');assert.equal(input.requestedModel,requestedModel);
+ }
+});
+test('explicit and non-string model selections are preserved for native validation',()=>{
+ for(const requestedModel of ['configured','inherit','not-a-model',undefined,null,1]){
+  const input={parentModelId:'chatgpt-codex/test',requestedModel};assert.equal(normalizeChatgptSubagentModel(input),input);
+ }
+});
+test('blank Task models for other providers retain the original validation',()=>{
+ for(const parentModelId of ['ordinary','claude-subscription/opus',undefined]){
+  const input={parentModelId,requestedModel:''};assert.equal(normalizeChatgptSubagentModel(input),input);
+ }
+});
