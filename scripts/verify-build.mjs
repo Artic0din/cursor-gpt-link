@@ -1,3 +1,4 @@
+import {verifySubagentLifecycle} from './subagent-lifecycle-check.mjs';
 import {verifyMaxMode,verifyContextBudget} from './max-mode-check.mjs';
 import {verifySubagentSettings} from './subagent-settings-check.mjs';
 import {verifySubagentModels} from './subagent-model-check.mjs';
@@ -32,7 +33,7 @@ try {
     execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe', windowsHide:true});
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
-      if(build.version==='3.20.21')verifyMaxMode(file.content);
+      if(build.version==='3.20.21'){verifyMaxMode(file.content);await verifySubagentLifecycle(file.content,['chatgpt-codex/']);}
       await verifyWorkbenchRouting(file.content, build.version);
       if(['3.20.17','3.20.21'].includes(build.version))await verifySubagentRegistration(file.content);
       console.log('Native workbench SSH routing and workspace resources: passed');

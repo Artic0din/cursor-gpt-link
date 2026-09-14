@@ -180,3 +180,35 @@ test('context and MAX controls stay local while supported request parameters rea
  assert.equal('maxMode' in request,false);assert.equal('context' in request,false);
  assert.deepEqual(providerModel({...model,context_window:272000}).api_types,['openai_responses']);
 });
+
+test('disconnect cancels the active upstream HTTP stream without another model request', {timeout:5000}, async () => {
+  fs.writeFileSync(path.join(process.env.CODEX_HOME, 'models_cache.json'), JSON.stringify({models:[model]}));
+  let upstreamClosed, calls=0;
+  const closed=new Promise(resolve=>upstreamClosed=resolve);
+  const upstream=http.createServer((_req,res)=>{
+    calls++;res.on('close',upstreamClosed);
+    res.writeHead(200,{'Content-Type':'text/event-stream'});res.write('data: {"type":"response.created"}\n\n');
+  });
+  const server=http.createServer(handle);
+  await Promise.all([new Promise(r=>upstream.listen(0,'127.0.0.1',r)),new Promise(r=>server.listen(0,'127.0.0.1',r))]);
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=(url,options)=>{
+    assert.ok(String(url).startsWith('https://chatgpt.com/'));
+    return originalFetch('http://127.0.0.1:'+upstream.address().port,options);
+  };
+  let client;
+  try {
+    await new Promise((resolve,reject)=>{
+      client=http.request({host:'127.0.0.1',port:server.address().port,path:'/v1/responses',method:'POST',
+        headers:{Authorization:'Bearer synthetic-test-key','Content-Type':'application/json'}},res=>{
+          assert.equal(res.statusCode,200);res.once('data',()=>{res.destroy();client.destroy();resolve();});
+        });
+      client.on('error',reject);client.end(JSON.stringify({model:'chatgpt-codex/test-model',input:'Hello'}));
+    });
+    await closed;assert.equal(calls,1);
+  } finally {
+    client?.destroy();globalThis.fetch=originalFetch;
+    server.closeAllConnections();upstream.closeAllConnections();
+    await Promise.all([new Promise(r=>server.close(r)),new Promise(r=>upstream.close(r))]);
+  }
+});

@@ -1,3 +1,4 @@
+import {patchSubagentLifecycle} from './subagent-lifecycle.mjs';
 import {patchMaxMode} from './max-mode.mjs';
 import {patchSubagentSettingsWorkbench, patchSubagentSettingsRuntime} from './subagent-settings.mjs';
 import {patchSubagentModel} from './subagent-model.mjs';
@@ -80,6 +81,7 @@ wb=addUsage(wb,{fn:'function Xvy(e){const t=ufp(119)',jsx:'Vvy',
   symbols:{jsx:'Vvy',useState:'Wlr',useEffect:'Jfy',card:'b_',zs:'zs',bar:'xA',barStyle:'Klr'}});
 wb=patchMaxMode(patchSubagentSettingsWorkbench(wb));
 wb=patchSubagentBubbles(patchRemoteRouting(wb,'desktop','3.20.21'),'desktop','3.20.21');
+wb=patchSubagentLifecycle(wb,'desktop','chatgpt-codex/');
 pending.push({path:workbenchPath,content:wb});
 const glassPath=path.join(root,'out/vs/workbench/workbench.glass.main.js');
 let glass=prelude+fs.readFileSync(glassPath,'utf8');
@@ -111,6 +113,7 @@ glass=addUsage(glass,{fn:'function dH1(t){const e=dDg(119)',jsx:'lH1',
   symbols:{jsx:'lH1',useState:'cus',useEffect:'aH1',card:'iv',zs:'Js',bar:'Im',barStyle:'yTi'}});
 glass=patchMaxMode(patchSubagentSettingsWorkbench(glass));
 glass=patchSubagentBubbles(patchRemoteRouting(glass,'glass','3.20.21'),'glass','3.20.21');
+glass=patchSubagentLifecycle(glass,'glass','chatgpt-codex/');
 pending.push({path:glassPath,content:glass});
 for(const relative of ['extensions/cursor-agent-exec/dist/main.js','extensions/cursor-local-agent-runtime/dist/main.js']){
  pending.push({path:path.join(root,relative),content:patchSubagentSettingsRuntime(patchSubagentModel(wrapRuntime(fs.readFileSync(path.join(root,relative),'utf8'))))});
