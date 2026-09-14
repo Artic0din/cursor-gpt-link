@@ -1,3 +1,4 @@
+import {verifyMaxMode,verifyContextBudget} from './max-mode-check.mjs';
 import {verifySubagentSettings} from './subagent-settings-check.mjs';
 import {verifySubagentModels} from './subagent-model-check.mjs';
 // Opt-in local verification against an original supported Cursor installation.
@@ -31,13 +32,14 @@ try {
     execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe', windowsHide:true});
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
+      if(build.version==='3.20.21')verifyMaxMode(file.content);
       await verifyWorkbenchRouting(file.content, build.version);
       if(['3.20.17','3.20.21'].includes(build.version))await verifySubagentRegistration(file.content);
       console.log('Native workbench SSH routing and workspace resources: passed');
     }
     if (!file.path.includes('cursor-agent-exec') && !file.path.includes('cursor-local-agent-runtime')) continue;
     if(['3.20.17','3.20.21'].includes(build.version))await verifySubagentModels(file.content);
-    if(build.version==='3.20.21')verifySubagentSettings(file.content);
+    if(build.version==='3.20.21'){verifySubagentSettings(file.content);verifyContextBudget(file.content,{id:'chatgpt-codex/test',capabilities:{context_length:272000}});}
     const start = file.content.indexOf('function(e,t,n,r,o,s=!1,i){const a=function(e){');
     assert.ok(start >= 0, 'Normalizer function found');
     const end = file.content.indexOf(file.path.includes('cursor-agent-exec') ? '}(c,t,n,r,o,null!=s&&s,a)' : '}(u,t,n,r,o,null!=s&&s,a)', start);
