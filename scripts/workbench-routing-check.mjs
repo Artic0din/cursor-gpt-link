@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 // Exercise the actual patched workbench method with synthetic service objects.
 // This checks argument wiring without distributing the application's bundles.
 export async function verifyWorkbenchRouting(source) {
-  const start = source.indexOf('async runLocalAgentInExtensionHost(');
+  const name=source.includes('async _subscriptionNativeLocalAgent(')?'_subscriptionNativeLocalAgent':'runLocalAgentInExtensionHost';
+  const start = source.indexOf('async '+name+'(');
   const end = source.indexOf('}runLocalAgentInDedicatedExtensionHost(', start);
   assert.ok(start >= 0 && end > start, 'Native workbench routing method found');
-  const method = source.slice(start, end + 1);
+  const method = source.slice(start, end + 1).replace('async '+name+'(', 'async runLocalAgentInExtensionHost(');
   const identity = value => value;
   const injected=name=>{const match=source.match(new RegExp('function '+name+'\\(existing,[\\s\\S]*?\\n}'));return match?new Function('return ('+match[0]+')')():identity;};
   const factory = new Function('__ChatgptSelectedModelIds','__ClaudeSelectedModelIds','cfe', 'hRe', 'fi', 'fr', 'Gh', 'qp', 'hVf', 'jyS', 'cRe', 'XyS', 'ofe', 'br', 'Gp', 's1S', 'rfe', 'oRe', 'vr', '__useChatgptDedicatedRuntime',
@@ -39,12 +40,13 @@ export async function verifyWorkbenchRouting(source) {
     const resources = {workspaceAuthority:authority, marker:'existing-exec-resources'};
     const override={subagentType:'explore',selection:{case:'model',value:{modelId:'selected-explore-model'}},toBinary:()=>new Uint8Array([1,2,3])};
     await route.call(service, {signal}, bytes, bytes, model, {}, {}, {}, [], resources,
-      {conversationId:'synthetic-conversation', requestedModel:{...bytes, modelId},subagentModelOverrides:[override]});
+      {subscriptionActionChannel:'subscription-actions:test',subscriptionPlanPrepends:[[1,2]],conversationId:'synthetic-conversation', requestedModel:{...bytes, modelId},subagentModelOverrides:[override]});
     assert.equal(calls[0], 'registered');
     const [kind, request, callbacks, ...rest] = calls[1];
     assert.equal(kind, expected);
     if(source.includes('__ChatgptSelectedModelIds')||source.includes('__ClaudeSelectedModelIds'))assert.deepEqual(request.availableModelIds,modelId.startsWith('chatgpt-codex/')?['selected-explore-model']:[]);
     assert.deepEqual(request.runOptions.subagentModelOverrides,[override.toBinary()]);
+    if(name==='_subscriptionNativeLocalAgent'){assert.equal(request.runOptions.subscriptionActionChannel,'subscription-actions:test');assert.deepEqual(request.runOptions.subscriptionPlanPrepends,[[1,2]]);}
     assert.equal(request.baseUrl, 'http://127.0.0.1:43187/v1');
     assert.equal(typeof callbacks.queryInteraction, 'function');
     assert.equal(typeof callbacks.handleCheckpoint, 'function');
