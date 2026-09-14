@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {bridgeCommandPattern, buildAutostart} from '../src/autostart.mjs';
+import {bridgeCommandPattern, buildAutostart, buildBridgeLauncher} from '../src/autostart.mjs';
 
 test('bridge restart matches only the exact Node executable and installed bridge', () => {
   const node = 'C:\\Program Files\\nodejs\\node.exe';
@@ -15,7 +15,7 @@ test('bridge restart matches only the exact Node executable and installed bridge
 });
 
 test('autostart encodes unusual paths as data', () => {
-  const code = buildAutostart({nodePath:'C:\\Node\\node.exe', bridgePath:"C:\\O'Brien\\runtime\\bridge.mjs", stateDir:"C:\\O'Brien"});
+  const code = buildBridgeLauncher({nodePath:'C:\\Node\\node.exe', bridgePath:"C:\\O'Brien\\runtime\\bridge.mjs", stateDir:"C:\\O'Brien"});
   const encoded = JSON.parse(code.match(/"-EncodedCommand",("[^"]+")/)[1]);
   const script = Buffer.from(encoded, 'base64').toString('utf16le');
   assert.ok(script.includes("O''Brien"));

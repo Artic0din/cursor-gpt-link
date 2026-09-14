@@ -116,3 +116,7 @@ Five regression tests cover creation, duplicate prevention, provider scope, canc
 The later ChatGPT SSH session contained a separate failure after reload: Task calls supplied an empty model string and failed native validation. The next attempts selected a model successfully and started local subagents. This confirms successful startup after retries, not reliable first-attempt behavior before the additional repair.
 
 For this subscription provider, an empty or whitespace-only requested model is now normalized to an omitted selection before the native resolver runs. Cursor still chooses the inherited, configured or forced model and checks availability. Explicit models and other providers retain native validation. Both runtime resolvers passed a reproduced empty-string failure, inheritance, configured defaults, forced-model handling and blocked-model checks. A new live test of the first attempt after this additional repair is still pending.
+
+### Bridge startup after the launching process exits
+
+A detached launcher now owns the complete stop/start sequence. Windows regression tests cover cold startup and replacement of an existing fixture worker after the launching process exits immediately. Previously the restart callback belonged to the exiting host. These checks use temporary workers, not account credentials or model requests. Both local usage endpoints were checked separately; the Agents Window display still requires a manual check.
