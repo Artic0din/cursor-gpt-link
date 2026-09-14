@@ -43,10 +43,10 @@ export function macosMajorVersion() {
 
 function validate(root) {
   build=supportedBuild(root);
-  if (process.platform !== 'darwin' || process.platform !== build.platform) {
+  if (process.platform !== 'darwin' || build.platform !== 'darwin') {
     throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
   }
-  if (process.arch !== 'arm64' || process.arch !== build.arch) {
+  if (process.arch !== 'arm64' || build.arch !== 'arm64') {
     throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
   }
   let major;
@@ -66,7 +66,7 @@ function validate(root) {
   for (const [relative, expected] of Object.entries(build.files)) {
     const bytes = fs.readFileSync(path.join(root, relative));
     if (hash(bytes) === expected) continue;
-    throw new Error('Original file does not match the supported build: ' + relative + '. Restore existing patches first.');
+    throw new Error('Original file does not match the reviewed macOS build: ' + relative + '. Restore existing patches first, or record fresh macOS hashes with node scripts/capture-hashes.mjs.');
   }
 }
 

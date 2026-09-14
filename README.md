@@ -83,7 +83,7 @@ The installer detects the standard macOS Cursor locations. It looks for the Code
 node patcher.mjs install --cursor-root "/Applications/Cursor.app/Contents/Resources/app" --codex-path "/opt/homebrew/bin/codex" --codex-home "$HOME/MyCodexHome" --port 43188
 ```
 
-`--cursor-root` must point to `Contents/Resources/app` inside `Cursor.app`, not the `Cursor.app` bundle itself. The path must resolve to the `codex` executable.
+`--cursor-root` must point to `Contents/Resources/app` inside `Cursor.app`, not the `Cursor.app` bundle itself. `--codex-path` must resolve to the `codex` executable.
 
 Configuration, a copy of the bridge runtime, model catalogs and original-file backups are stored in `~/Library/Application Support/cursor-gpt-link`. Set `CURSOR_GPT_LINK_HOME` before running the patcher to choose a different state directory. Use the same value for subsequent status and restore commands. The runtime is copied during installation, so moving the repository afterwards does not break autostart. The Node.js executable must stay at its installation path.
 
@@ -143,6 +143,7 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 
 * Remote SSH responses and file edits are confirmed in the tested setup. Other remote configurations and separate Agents Window SSH coverage still need testing.
 * Only the listed macOS 26+ (Apple Silicon) client builds are supported. Windows and Linux clients, other remote environments and cloud agents are untested.
+* The file hashes in `src/supported-build*.json` are carried over from the earlier review and have not yet been re-recorded from macOS arm64 installations. Until they are, the installer rejects macOS files as unsupported. Record them on a Mac with `node scripts/capture-hashes.mjs` (see Development).
 * Tool calls and file edits work in manual local Cursor testing. Separate coverage of the IDE and Agents Window, including approvals and cancellation, has not yet been recorded.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.
 * The bridge uses Codex's local model cache. After switching accounts, open Codex to refresh its cache and reload the Cursor window. A stale cache may temporarily show models the new account cannot use.
@@ -154,9 +155,10 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 ```bash
 npm test
 node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"
+node scripts/capture-hashes.mjs "/Applications/Cursor.app/Contents/Resources/app"
 ```
 
-Unit tests use synthetic credentials and model data and do not make requests to OpenAI. The optional build verification reads original Cursor files locally, validates hashes, generates candidate patches in a temporary directory, checks syntax and exercises reasoning and Fast forwarding. It does not modify Cursor. No Cursor binaries, bundled source, model caches or account files are distributed here.
+Unit tests use synthetic credentials and model data and do not make requests to OpenAI. The optional build verification reads original Cursor files locally, validates hashes, generates candidate patches in a temporary directory, checks syntax and exercises reasoning and Fast forwarding. It does not modify Cursor. No Cursor binaries, bundled source, model caches or account files are distributed here. After the macOS-only switch, the recorded hashes are still the previously reviewed values: re-record them from the exact macOS arm64 installations with `capture-hashes.mjs` and copy the output into the matching `src/supported-build*.json` before installing on macOS.
 
 When reporting a problem, include your Cursor version and commit, operating system, Node.js version and a redacted error message. Do not attach `auth.json`, `config.json`, model caches, patched application files or backup directories.
 

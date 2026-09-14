@@ -19,6 +19,8 @@ test('autostart restarts the installed bridge with pkill on macOS', () => {
   assert.ok(code.includes('pkill'));
   assert.ok(code.includes('process.platform==="darwin"'));
   assert.ok(code.includes('CURSOR_GPT_LINK_HOME'));
+  assert.ok(code.includes('["-f",'));
+  assert.equal(code.includes('"-i"'), false);
   assert.equal(code.includes('powershell.exe'), false);
   assert.equal(code.includes('EncodedCommand'), false);
   assert.equal(code.includes('windowsHide'), false);

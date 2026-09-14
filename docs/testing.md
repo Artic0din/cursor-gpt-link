@@ -14,7 +14,7 @@ Updated on September 12, 2026.
 | Node.js | 26.7.0 |
 | Codex CLI | 0.153.4 |
 
-The original JavaScript hashes are recorded in [the 3.20.7 metadata](../src/supported-build.json) and [the 3.20.11 metadata](../src/supported-build-3.20.11.json). File hashes are used because the same version label is not sufficient to establish that minified patch anchors are compatible.
+The original JavaScript hashes are recorded in [the 3.20.7 metadata](../src/supported-build.json) and [the 3.20.11 metadata](../src/supported-build-3.20.11.json). File hashes are used because the same version label is not sufficient to establish that minified patch anchors are compatible. After the macOS-only switch these are still the previously reviewed values: re-record them from the exact macOS arm64 builds with `node scripts/capture-hashes.mjs "/Applications/Cursor.app/Contents/Resources/app"` before installing on macOS. Until then `node patcher.mjs check` fails on hash mismatch by design.
 
 ## Cursor 3.20.17 update
 
