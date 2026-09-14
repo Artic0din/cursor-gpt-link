@@ -25,7 +25,7 @@ try {
     if (!file.path.endsWith('.js')) continue;
     const candidate = path.join(temp, i + '.mjs');
     fs.writeFileSync(candidate, file.content);
-    execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe', windowsHide:true});
+    execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe'});
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
       await verifyWorkbenchRouting(file.content, build.version);

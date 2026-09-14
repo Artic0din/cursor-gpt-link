@@ -1,8 +1,9 @@
 {
   "version": "3.20.7",
   "commit": "979197d5570b168c034c634b3e21f2bea3ea5be0",
-  "platform": "win32",
-  "arch": "x64",
+  "platform": "darwin",
+  "arch": "arm64",
+  "osMinimum": "26.0",
   "files": {
     "out/vs/workbench/workbench.desktop.main.js": "c9a317381344f35de38fa44b6d4e2579ad3c8fc5dded1fe84abcfc7867745fd1",
     "out/vs/workbench/workbench.glass.main.js": "d4a3b85717ac4009372e300b1c3b26a541b5654ecaa5c13db64d43bd5ef123c5",

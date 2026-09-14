@@ -2,13 +2,13 @@
 
 An experimental patch that adds models from your local Codex catalog to Cursor's model picker and routes them through your existing ChatGPT sign-in. It uses Cursor's local agent runtime. It does not install an extension.
 
-This release targets the reviewed Windows builds listed below. It is not a general patch for every Cursor version, operating system, subscription, or model.
+This release targets the reviewed macOS builds listed below. It is not a general patch for every Cursor version, operating system, subscription, or model. Windows and Linux are not supported.
 
 ## Status
 
 | Item | Current status |
 | --- | --- |
-| Cursor | 3.20.17, 3.20.11 and 3.20.7, Windows x64 |
+| Cursor | 3.20.17, 3.20.11 and 3.20.7, macOS 26+ (Apple Silicon, arm64) |
 | Latest Cursor commit | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` (3.20.17) |
 | Cursor 3.20.11 commit | `69d099d6568dc97e110ba8184614faf51c4040b0` |
 | Previous Cursor commit | `979197d5570b168c034c634b3e21f2bea3ea5be0` (3.20.7) |
@@ -47,19 +47,19 @@ Do not assume a fixed twofold speed increase or a fixed usage multiplier. Availa
 
 ## Requirements
 
-* Windows x64 and one of the exact Cursor builds listed above.
+* macOS 26 or newer on Apple Silicon (arm64) and one of the exact Cursor builds listed above.
 * Node.js 22 or newer on PATH. Only Node.js 26.7.0 has been tested locally.
 * A Codex executable and a ChatGPT account with access to the requested models.
 * Existing file-based Codex authentication in `auth.json` and a populated `models_cache.json` in the same Codex home.
 * Permission to modify your Cursor installation directory.
 
-This release reads file-based Codex authentication only. It does not read the Windows credential store or import browser cookies. API-key-only authentication is not supported. Refer to OpenAI's [authentication documentation](https://learn.chatgpt.com/docs/auth) for sign-in and credential storage options.
+This release reads file-based Codex authentication only. It does not read the macOS Keychain or import browser cookies. API-key-only authentication is not supported. Refer to OpenAI's [authentication documentation](https://learn.chatgpt.com/docs/auth) for sign-in and credential storage options.
 
 ## Install
 
 Clone this repository into a local directory, then open a terminal there:
 
-```powershell
+```bash
 git clone https://github.com/vertexitde/cursor-gpt-link.git
 cd cursor-gpt-link
 node patcher.mjs check
@@ -69,23 +69,23 @@ If you have not signed in, run `codex login` and complete the ChatGPT sign-in. O
 
 Close all Cursor windows and background processes, then run:
 
-```powershell
+```bash
 npm run install-patch
 ```
 
 This is equivalent to `node patcher.mjs install`. Install on original supported Cursor files. If a Claude patch is already present, restore it with its own installer first, install ChatGPT, then install Claude again.
 
-Start Cursor again and select a model with the OpenAI symbol. The bridge starts with Cursor and listens only on `127.0.0.1`. On Windows, startup replaces the existing worker for this exact bridge installation so code changes take effect. Other Node.js processes and bridge installations are not selected. A `ChatGPT: Sign in (subscription)` command is also added to the command palette. If that command does not open a browser, use `codex login` in a terminal.
+Start Cursor again and select a model with the OpenAI symbol. The bridge starts with Cursor and listens only on `127.0.0.1`. On macOS, startup replaces the existing worker for this exact bridge installation so code changes take effect. Other Node.js processes and bridge installations are not selected. A `ChatGPT: Sign in (subscription)` command is also added to the command palette. If that command does not open a browser, use `codex login` in a terminal.
 
-The installer detects common per-user and system-wide Cursor locations. It looks for the Codex desktop executable, then for `codex.exe` on PATH. For other locations:
+The installer detects the standard macOS Cursor locations. It looks for the Codex desktop executable, then for `codex` on PATH. For other locations:
 
-```powershell
-node patcher.mjs install --cursor-root "D:\Apps\Cursor\resources\app" --codex-path "D:\Tools\codex.exe" --codex-home "D:\MyCodexHome" --port 43188
+```bash
+node patcher.mjs install --cursor-root "/Applications/Cursor.app/Contents/Resources/app" --codex-path "/opt/homebrew/bin/codex" --codex-home "$HOME/MyCodexHome" --port 43188
 ```
 
-`--cursor-root` must point to `resources/app`, not the directory containing `Cursor.exe`. A npm command shim such as `codex.cmd` is not accepted as the executable path.
+`--cursor-root` must point to `Contents/Resources/app` inside `Cursor.app`, not the `Cursor.app` bundle itself. The path must resolve to the `codex` executable.
 
-Configuration, a copy of the bridge runtime, model catalogs and original-file backups are stored in `%LOCALAPPDATA%\cursor-gpt-link`. Set `CURSOR_GPT_LINK_HOME` before running the patcher to choose a different state directory. Use the same value for subsequent status and restore commands. The runtime is copied during installation, so moving the repository afterwards does not break autostart. The Node.js executable must stay at its installation path.
+Configuration, a copy of the bridge runtime, model catalogs and original-file backups are stored in `~/Library/Application Support/cursor-gpt-link`. Set `CURSOR_GPT_LINK_HOME` before running the patcher to choose a different state directory. Use the same value for subsequent status and restore commands. The runtime is copied during installation, so moving the repository afterwards does not break autostart. The Node.js executable must stay at its installation path.
 
 ## Remote SSH
 
@@ -101,13 +101,13 @@ To upgrade an existing public installation, close Cursor, run `node patcher.mjs 
 
 ## Check or remove the patch
 
-```powershell
+```bash
 node patcher.mjs status
 ```
 
 To remove only this ChatGPT patch, close Cursor and run:
 
-```powershell
+```bash
 npm run uninstall
 ```
 
@@ -115,7 +115,7 @@ This is equivalent to `node patcher.mjs restore`. If Claude is also installed, r
 
 Restore verifies both the installed files and the backups before copying originals back. Backups are retained. It refuses to overwrite files changed by a Cursor update or another patch. If an update has replaced the application, use a clean Cursor installation instead of forcing old backups over the new version. The patcher has no force option.
 
-Restoring removes the autostart code. An already running bridge can remain until it is stopped or Windows is restarted. It accepts requests only with its local key. You can inspect its process command line for the `cursor-gpt-link\runtime\bridge.mjs` path before stopping that process. The patcher does not stop unrelated Node.js processes.
+Restoring removes the autostart code. An already running bridge can remain until it is stopped or macOS is restarted. It accepts requests only with its local key. You can inspect its process command line for the `cursor-gpt-link/runtime/bridge.mjs` path before stopping that process. The patcher does not stop unrelated Node.js processes.
 
 Cursor updates can remove this patch. New builds need separate review, new anchors and new verification. Do not change the supported version number to bypass the checks.
 
@@ -142,7 +142,7 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 ## Limitations
 
 * Remote SSH responses and file edits are confirmed in the tested setup. Other remote configurations and separate Agents Window SSH coverage still need testing.
-* Only the listed Windows x64 client builds are supported. macOS and Linux clients, other remote environments and cloud agents are untested.
+* Only the listed macOS 26+ (Apple Silicon) client builds are supported. Windows and Linux clients, other remote environments and cloud agents are untested.
 * Tool calls and file edits work in manual local Cursor testing. Separate coverage of the IDE and Agents Window, including approvals and cancellation, has not yet been recorded.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.
 * The bridge uses Codex's local model cache. After switching accounts, open Codex to refresh its cache and reload the Cursor window. A stale cache may temporarily show models the new account cannot use.
@@ -151,9 +151,9 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 
 ## Development
 
-```powershell
+```bash
 npm test
-node scripts/verify-build.mjs "C:\Path\To\Original\Cursor\resources\app"
+node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"
 ```
 
 Unit tests use synthetic credentials and model data and do not make requests to OpenAI. The optional build verification reads original Cursor files locally, validates hashes, generates candidate patches in a temporary directory, checks syntax and exercises reasoning and Fast forwarding. It does not modify Cursor. No Cursor binaries, bundled source, model caches or account files are distributed here.
