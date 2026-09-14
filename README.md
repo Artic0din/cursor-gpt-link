@@ -23,7 +23,7 @@ This release targets the reviewed Windows builds listed below. It is not a gener
 | Remote SSH sessions | Responses and remote file edits confirmed working after the 0.1.1 routing fix |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
-Cursor 3.20.21 has its own reviewed patch definitions; support for 3.20.17, 3.20.11 and 3.20.7 is retained. The installer selects a version-specific patch and checks the version, commit and SHA-256 hashes of five original JavaScript bundles. It stops before patching an unknown or already modified build. Automated checks passed on 3.20.21; a new manual UI test is still pending. See [testing notes](docs/testing.md) for the scope of verification.
+Cursor 3.20.21 has its own reviewed patch definitions; support for 3.20.17, 3.20.11 and 3.20.7 is retained. The installer selects a version-specific patch and checks the version, commit and SHA-256 hashes of five original JavaScript bundles. It stops before patching an unknown or already modified build. Automated checks passed on 3.20.21; the project owner confirmed Explore model selection, effort forwarding and both tooltip layouts after reloading. See [testing notes](docs/testing.md) for the scope of verification.
 
 On Cursor 3.20.17 and 3.20.21, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration. The repair passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation. See the testing notes for details.
 
