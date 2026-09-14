@@ -31,11 +31,11 @@ try {
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
       await verifyWorkbenchRouting(file.content, build.version);
-      if(build.version==='3.20.17')await verifySubagentRegistration(file.content);
+      if(['3.20.17','3.20.21'].includes(build.version))await verifySubagentRegistration(file.content);
       console.log('Native workbench SSH routing and workspace resources: passed');
     }
     if (!file.path.includes('cursor-agent-exec') && !file.path.includes('cursor-local-agent-runtime')) continue;
-    if(build.version==='3.20.17')await verifySubagentModels(file.content);
+    if(['3.20.17','3.20.21'].includes(build.version))await verifySubagentModels(file.content);
     const start = file.content.indexOf('function(e,t,n,r,o,s=!1,i){const a=function(e){');
     assert.ok(start >= 0, 'Normalizer function found');
     const end = file.content.indexOf(file.path.includes('cursor-agent-exec') ? '}(c,t,n,r,o,null!=s&&s,a)' : '}(u,t,n,r,o,null!=s&&s,a)', start);

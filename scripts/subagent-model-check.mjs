@@ -6,7 +6,9 @@ export async function verifySubagentModels(source) {
  assert.ok(start>=0&&end>start,'Native subagent model resolver found');
  const identity=value=>value;
  const forced=async options=>options.forceModelId && !options.isModelBlocked(options.forceModelId)?options.forceModelId:undefined;
- const vars={l0:identity,o0:'explore',Ene:identity,Ine:()=>false,Dne:forced,Nne:'forced',Cne:identity,YK:'fast',KK:'auto',Jq:Error,
+ const vars={u0:identity,i0:'explore',Pne:identity,xne:()=>false,qne:forced,Jne:'forced',XK:'fast',VK:'auto',Lq:Error,
+  nvt:identity,Zwt:'explore',mNt:identity,dNt:()=>false,SNt:forced,wNt:'forced',Gpt:'fast',jpt:'auto',I8:Error,
+  l0:identity,o0:'explore',Ene:identity,Ine:()=>false,Dne:forced,Nne:'forced',Cne:identity,YK:'fast',KK:'auto',Jq:Error,
   evt:identity,Kwt:'explore',lNt:identity,uNt:()=>false,TNt:forced,gNt:'forced',cNt:identity,Upt:'fast',qpt:'auto',E8:Error,
   __normalizeClaudeSubagentModel:identity,__normalizeChatgptSubagentModel:normalizeChatgptSubagentModel};
  const make=values=>new Function(...Object.keys(values),'return ('+source.slice(start,end+1)+')')(...Object.values(values));
