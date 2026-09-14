@@ -26,18 +26,37 @@ while (args.length) {
 
 function cursorRoot() {
   const candidates = options['cursor-root'] ? [options['cursor-root']] : [
-    path.join(process.env.LOCALAPPDATA || '', 'Programs/cursor/resources/app'),
-    path.join(process.env.ProgramFiles || 'C:/Program Files', 'Cursor/resources/app')
+    '/Applications/Cursor.app/Contents/Resources/app',
+    path.join(os.homedir(), 'Applications/Cursor.app/Contents/Resources/app')
   ];
   const root = candidates.find(p => fs.existsSync(path.join(p, 'package.json')));
-  if (!root) throw new Error('Cursor not found. Pass --cursor-root with the resources/app directory.');
+  if (!root) throw new Error('Cursor not found. Pass --cursor-root with the Cursor Resources/app directory.');
   return path.resolve(root);
+}
+
+export function macosMajorVersion() {
+  const output = execFileSync('sw_vers', ['-productVersion'], {encoding:'utf8'}).trim();
+  const major = Number(output.split('.')[0]);
+  if (!Number.isInteger(major)) throw new Error('Cannot determine the macOS version from: ' + output);
+  return major;
 }
 
 function validate(root) {
   build=supportedBuild(root);
-  if (process.platform !== build.platform || process.arch !== build.arch) {
-    throw new Error('Only Windows x64 is supported by this release.');
+  if (process.platform !== 'darwin' || process.platform !== build.platform) {
+    throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
+  }
+  if (process.arch !== 'arm64' || process.arch !== build.arch) {
+    throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
+  }
+  let major;
+  try {
+    major = macosMajorVersion();
+  } catch {
+    throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
+  }
+  if (major < 26) {
+    throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release. Detected macOS ' + major + '.');
   }
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   const product = JSON.parse(fs.readFileSync(path.join(root, 'product.json'), 'utf8'));
@@ -54,21 +73,33 @@ function validate(root) {
 function codexPath() {
   if (options['codex-path']) {
     const selected = path.resolve(options['codex-path']);
-    if (!fs.existsSync(selected) || !selected.endsWith('.exe')) throw new Error('--codex-path must point to codex.exe.');
+    if (!fs.existsSync(selected) || path.basename(selected) !== 'codex') throw new Error('--codex-path must point to the codex executable.');
+    if (/\.exe$/i.test(selected)) throw new Error('--codex-path must point to the macOS codex executable, not codex.exe.');
     return selected;
   }
-  const bundled = path.join(process.env.LOCALAPPDATA || '', 'Programs/OpenAI/Codex/bin/codex.exe');
-  if (fs.existsSync(bundled)) return bundled;
+  for (const candidate of [
+    '/Applications/Codex.app/Contents/MacOS/codex',
+    '/opt/homebrew/bin/codex',
+    '/usr/local/bin/codex',
+    path.join(os.homedir(), '.codex', 'bin', 'codex')
+  ]) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
   try {
-    const found = execFileSync('where.exe', ['codex.exe'], {encoding:'utf8', windowsHide:true}).trim().split(/\r?\n/)[0];
-    if (fs.existsSync(found)) return found;
+    const found = execFileSync('which', ['codex'], {encoding:'utf8'}).trim().split(/\r?\n/)[0];
+    if (found && fs.existsSync(found)) return found;
   } catch {}
-  throw new Error('Codex executable not found. Pass --codex-path with the path to codex.exe.');
+  throw new Error('Codex executable not found. Pass --codex-path with the path to codex.');
 }
 
 function requireClosedCursor() {
-  const list = execFileSync('tasklist.exe', ['/FI', 'IMAGENAME eq Cursor.exe', '/FO', 'CSV', '/NH'], {encoding:'utf8', windowsHide:true});
-  if (/"Cursor\.exe"/i.test(list)) throw new Error('Close all Cursor windows and background processes before installing or restoring.');
+  try {
+    execFileSync('pgrep', ['-x', 'Cursor'], {encoding:'utf8', stdio:'pipe'});
+  } catch (error) {
+    if (error?.status === 1) return;
+    throw error;
+  }
+  throw new Error('Close all Cursor windows and background processes before installing or restoring.');
 }
 
 async function availablePort(port) {
@@ -143,7 +174,7 @@ Close Cursor before install or restore. See README.md for requirements.`);
     if (!file.path.endsWith('.js')) continue;
     const candidate = path.join(backupDir, 'candidate-' + n + '.mjs');
     fs.writeFileSync(candidate, file.content);
-    execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe', windowsHide:true});
+    execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe'});
     fs.unlinkSync(candidate);
   }
   const runtime = path.join(stateDir, 'runtime');

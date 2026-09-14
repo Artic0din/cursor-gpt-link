@@ -113,7 +113,7 @@ export async function fetchUsage() {
 function refreshAuth() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = new Promise((resolve, reject) => {
-    const child = spawn(config.codex, ['app-server'], {windowsHide: true, stdio: ['pipe','pipe','ignore']});
+    const child = spawn(config.codex, ['app-server'], {stdio: ['pipe','pipe','ignore']});
     let buffer = '', settled = false;
     const finish = error => { if (settled) return; settled = true; clearTimeout(timer); child.kill(); error ? reject(error) : resolve(); };
     const timer = setTimeout(() => finish(new Error('Could not refresh ChatGPT authentication. Run codex login.')), 30000);
@@ -208,7 +208,7 @@ export async function handle(req, res) {
     if (!authorized(req)) return json(res,401,{error:{message:'Local bridge authentication required'}});
     if (req.method === 'POST' && req.url === '/login') {
       if (!loginProcess) {
-        loginProcess=spawn(config.codex,['login'],{windowsHide:true,stdio:'ignore'});
+        loginProcess=spawn(config.codex,['login'],{stdio:'ignore'});
         await new Promise((resolve,reject)=>{loginProcess.once('spawn',resolve);loginProcess.once('error',reject);});
         loginProcess.on('error',()=>{loginProcess=undefined;});
         loginProcess.on('exit',()=>{loginProcess=undefined;});

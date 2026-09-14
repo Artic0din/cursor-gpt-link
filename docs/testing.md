@@ -6,7 +6,7 @@ Updated on September 12, 2026.
 
 | Component | Version |
 | --- | --- |
-| Operating system | Windows, x64 |
+| Operating system | macOS 26+, arm64 (Apple Silicon) |
 | Cursor | 3.20.17, 3.20.11 and 3.20.7 |
 | Cursor 3.20.17 commit | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` |
 | Cursor 3.20.11 commit | `69d099d6568dc97e110ba8184614faf51c4040b0` |
@@ -28,7 +28,7 @@ The reviewed hashes are in [the 3.20.17 metadata](../src/supported-build-3.20.17
 
 All 24 public unit tests passed locally. They cover partial model refreshes, explicit model hiding, account-separated saved catalogs, supported reasoning and Fast combinations, the default speed setting, request normalization, unsupported settings, local bearer authentication and browser-origin rejection. Installation tests verify exact restoration, refusal of changed application files or damaged backups, and resuming an interrupted restore. Remote routing tests check runtime selection, extension activation and preservation of workspace resources and cancellation signals in both workbenches. Additional checks cover the icon labels, subscription usage mapping, quota errors, and exact bridge-process selection on restart. Tests use synthetic data without access to a real account.
 
-The GitHub workflow runs this suite on Windows with Node.js 22, 24 and 26. These unit jobs do not contain or test a real Cursor installation.
+The GitHub workflow runs this suite on macOS 26 with Node.js 22, 24 and 26. These unit jobs do not contain or test a real Cursor installation.
 
 Local build verification uses original files from the tested installation. It checks unique patch anchors and JavaScript syntax in both workbenches, both local runtimes and the main process. It invokes each patched runtime's parameter normalizer for Low, Medium, High, Very high, Max and Ultra, with Fast both on and off, and checks the desktop workbench checksum.
 
@@ -67,7 +67,7 @@ The UI control and request field work, but faster processing and its usage multi
 * The public installer and restore flow against a fresh real application installation with Cursor closed.
 * Interactive sign-in and automatic renewal in a fresh public installation.
 * Actual priority processing when requested.
-* Other accounts, installation layouts and operating systems.
+* Other accounts and installation layouts.
 
 ## Subscription usage and model labels
 
