@@ -47,7 +47,7 @@ Do not assume a fixed twofold speed increase or a fixed usage multiplier. Availa
 
 ## Requirements
 
-* macOS 26 or newer on Apple Silicon (arm64) and one of the exact Cursor builds listed above.
+* macOS 26 or newer on an Apple Silicon (arm64) Mac and one of the exact Cursor builds listed above. The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
 * Node.js 22 or newer on PATH. Only Node.js 26.7.0 has been tested locally.
 * A Codex executable and a ChatGPT account with access to the requested models.
 * Existing file-based Codex authentication in `auth.json` and a populated `models_cache.json` in the same Codex home.
@@ -86,6 +86,8 @@ node patcher.mjs install --cursor-root "/Applications/Cursor.app/Contents/Resour
 `--cursor-root` must point to `Contents/Resources/app` inside `Cursor.app`, not the `Cursor.app` bundle itself. `--codex-path` must resolve to the `codex` executable.
 
 Configuration, a copy of the bridge runtime, model catalogs and original-file backups are stored in `~/Library/Application Support/cursor-gpt-link`. Set `CURSOR_GPT_LINK_HOME` before running the patcher to choose a different state directory. Use the same value for subsequent status and restore commands. The runtime is copied during installation, so moving the repository afterwards does not break autostart. The Node.js executable must stay at its installation path.
+
+Patching files under `Contents` invalidates the application seal, so the installer re-signs the `Cursor.app` bundle ad-hoc (`codesign --force --deep --sign -`) after writing. If `--cursor-root` points outside a `Cursor.app` bundle, re-sign that copy manually with the same command.
 
 ## Remote SSH
 

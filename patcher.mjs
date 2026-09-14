@@ -41,22 +41,61 @@ export function macosMajorVersion() {
   return major;
 }
 
+export function osMinimumMajor(manifest = build) {
+  const major = Number(String(manifest?.osMinimum ?? '').split('.')[0]);
+  if (!Number.isInteger(major) || major <= 0) throw new Error('Supported build is missing a valid osMinimum.');
+  return major;
+}
+
+export function machineArch() {
+  // process.arch reports the Node runtime, which is x64 when an Intel Node
+  // runs under Rosetta on Apple Silicon. sysctl sees through translation:
+  // proc_translated is 1 only inside a translated process, and
+  // hw.optional.arm64 is 1 on every Apple Silicon Mac.
+  try {
+    if (execFileSync('sysctl', ['-n', 'sysctl.proc_translated'], {encoding:'utf8'}).trim() === '1') return 'arm64';
+  } catch {}
+  try {
+    const arm64 = execFileSync('sysctl', ['-n', 'hw.optional.arm64'], {encoding:'utf8'}).trim();
+    if (arm64 === '1') return 'arm64';
+    if (arm64 === '0') return 'x64';
+  } catch {}
+  return process.arch;
+}
+
+export function appBundlePath(root) {
+  const bundle = path.dirname(path.dirname(path.dirname(path.resolve(root))));
+  if (path.extname(bundle) !== '.app' || !fs.existsSync(bundle)) throw new Error('Cannot locate the Cursor.app bundle for ' + root + '. Re-sign it manually: codesign --force --deep --sign - <Cursor.app>.');
+  return bundle;
+}
+
+function resignAppBundle(root) {
+  const bundle = appBundlePath(root);
+  try {
+    execFileSync('codesign', ['--force', '--deep', '--sign', '-', bundle], {stdio:'pipe'});
+  } catch (error) {
+    throw new Error('Patched files are installed but re-signing ' + bundle + ' failed. Restore with node patcher.mjs restore, then re-sign manually: codesign --force --deep --sign - ' + bundle);
+  }
+  console.log('Re-signed ' + bundle + ' (ad-hoc) so Gatekeeper accepts the patched bundle.');
+}
+
 function validate(root) {
   build=supportedBuild(root);
   if (process.platform !== 'darwin' || build.platform !== 'darwin') {
     throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
   }
-  if (process.arch !== 'arm64' || build.arch !== 'arm64') {
+  if (machineArch() !== 'arm64' || build.arch !== 'arm64') {
     throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
   }
+  const minimum = osMinimumMajor();
   let major;
   try {
     major = macosMajorVersion();
   } catch {
-    throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release.');
+    throw new Error('Only macOS ' + minimum + '+ (Apple Silicon) is supported by this release.');
   }
-  if (major < 26) {
-    throw new Error('Only macOS 26+ (Apple Silicon) is supported by this release. Detected macOS ' + major + '.');
+  if (major < minimum) {
+    throw new Error('Only macOS ' + minimum + '+ (Apple Silicon) is supported by this release. Detected macOS ' + major + '.');
   }
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   const product = JSON.parse(fs.readFileSync(path.join(root, 'product.json'), 'utf8'));
@@ -181,7 +220,12 @@ Close Cursor before install or restore. See README.md for requirements.`);
   fs.mkdirSync(runtime, {recursive:true});
   for (const name of ['bridge.mjs', 'config.mjs', 'openai-icon.mjs']) fs.copyFileSync(path.join(sourceDir, 'src', name), path.join(runtime, name));
   installFiles(pending, {backupDir, manifestPath, version:build.version, commit:build.commit});
+  // Patching JavaScript under Contents invalidates the bundle seal, so
+  // Gatekeeper can reject Cursor as damaged. Re-sign ad-hoc after writing.
+  resignAppBundle(root);
   console.log('Installed. Start Cursor and select a model with the OpenAI symbol.');
 }
 
-main().catch(error => { console.error(error.message); process.exitCode = 1; });
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(error => { console.error(error.message); process.exitCode = 1; });
+}
