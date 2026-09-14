@@ -1,3 +1,4 @@
+import {modelTooltip} from './model-tooltip.mjs';
 import http from 'node:http';
 import {openaiIcon} from './openai-icon.mjs';
 import fs from 'node:fs';
@@ -63,7 +64,7 @@ export function pickerModel(m) {
     supportsPlanMode: true, supportsAutoContext: true, contextTokenLimit: m.context_window,
     autoContextMaxTokens: m.context_window, namedModelSectionIndex: 0,
     vendorName: 'openai', vendor:{id:2,displayName:'OpenAI'}, modelPickerBadges:[], cloudAgentEffortModes:[], tagline: 'ChatGPT subscription, local connection',
-    tooltipData:{primaryText:'',secondaryText:'',secondaryWarningText:false,icon:'',tertiaryText:'',tertiaryTextUrl:'',markdownContent:m.description+'\n\nChatGPT subscription, '+m.context_window+' tokens of context'},
+    tooltipData:modelTooltip(m.display_name,m.description,m.context_window,m.default_reasoning_level),
     parameterDefinitions: [{id: 'reasoning', name: 'Reasoning', parameterType: {enumParameter: {
       values: m.supported_reasoning_levels.map(v => ({value: v.effort, displayName: labels[v.effort]||v.effort, markdownTooltip: v.description,modelPickerBadges:[]}))
     }},isCycleableByHotkey:true},...(fastAvailable?[{
@@ -76,7 +77,7 @@ export function pickerModel(m) {
       displayName: openaiIcon + escapeHtml(m.display_name) + ' <span style="color: var(--cursor-text-tertiary);">'+escapeHtml(labels[v.effort]||v.effort)+(fast?' Fast':'')+'</span>',
       displayNameOutsidePicker:m.display_name+' '+(labels[v.effort]||v.effort)+(fast?' Fast':''),
       variantStringRepresentation:prefix+m.slug+'[reasoning='+v.effort+(fastAvailable?',fast='+fast:'')+']',isMaxMode: false,
-      tooltipData:{primaryText:'',secondaryText:'',secondaryWarningText:false,icon:'',tertiaryText:'',tertiaryTextUrl:'',markdownContent:m.description+'\n\nReasoning: '+(labels[v.effort]||v.effort)+(fast?'\n\n'+fastTooltip:'')},
+      tooltipData:modelTooltip(m.display_name,m.description,m.context_window,v.effort,fast),
       isDefaultNonMaxConfig: v.effort === m.default_reasoning_level && !fast}))),
     legacySlugs: [], idAliases: []
   };

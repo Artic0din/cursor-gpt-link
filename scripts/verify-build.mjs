@@ -1,3 +1,4 @@
+import {verifySubagentSettings} from './subagent-settings-check.mjs';
 import {verifySubagentModels} from './subagent-model-check.mjs';
 // Opt-in local verification against an original supported Cursor installation.
 // Bundled application code is read locally and is never included in this repository.
@@ -36,6 +37,7 @@ try {
     }
     if (!file.path.includes('cursor-agent-exec') && !file.path.includes('cursor-local-agent-runtime')) continue;
     if(['3.20.17','3.20.21'].includes(build.version))await verifySubagentModels(file.content);
+    if(build.version==='3.20.21')verifySubagentSettings(file.content);
     const start = file.content.indexOf('function(e,t,n,r,o,s=!1,i){const a=function(e){');
     assert.ok(start >= 0, 'Normalizer function found');
     const end = file.content.indexOf(file.path.includes('cursor-agent-exec') ? '}(c,t,n,r,o,null!=s&&s,a)' : '}(u,t,n,r,o,null!=s&&s,a)', start);

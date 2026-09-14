@@ -27,6 +27,8 @@ Cursor 3.20.21 has its own reviewed patch definitions; support for 3.20.17, 3.20
 
 On Cursor 3.20.17 and 3.20.21, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration. The repair passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation. See the testing notes for details.
 
+On Cursor 3.20.21, **Explore Subagent Model** selections are forwarded to the local runtime with their model parameters. **Default**, **Inherit** and **Disabled** retain Cursor's native behavior. Model tooltips show the context window and selected effort in the same layout as Cursor's built-in models. See the [testing notes](docs/testing.md) for coverage.
+
 ## What it adds
 
 OAuth models appear with a small OpenAI symbol before their names in the model picker, in their own **ChatGPT Subscription** section. Native Cursor models stay under **Cursor Models**. If cursor-claude-link is also installed, Claude models appear under **Claude Subscription**. Install ChatGPT first and Claude second. Remove them in reverse order because both modify the same Cursor files. The list comes from your local Codex model catalog, including each model's supported reasoning levels. The patch does not ship a fixed model list or grant access to models your account cannot use.

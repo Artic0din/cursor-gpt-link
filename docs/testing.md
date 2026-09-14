@@ -120,3 +120,9 @@ For this subscription provider, an empty or whitespace-only requested model is n
 ### Bridge startup after the launching process exits
 
 A detached launcher now owns the complete stop/start sequence. Windows regression tests cover cold startup and replacement of an existing fixture worker after the launching process exits immediately. Previously the restart callback belonged to the exiting host. These checks use temporary workers, not account credentials or model requests. Both local usage endpoints were checked separately; the Agents Window display still requires a manual check.
+
+### Explore model settings on Cursor 3.20.21
+
+The workbench now includes the explicitly selected Explore model in the local runtime catalog. Previously a selection missing from `localProviderAgentModelIds` silently became Inherit. The patch also carries the selected model parameters into the client subagent request and preserves parent parameters for inherited models. Default, Inherit and Disabled continue through Cursor's native resolver, including its priority for explicit Task model arguments. Disabled applies to Explore, not every type of subagent.
+
+Tests reproduce the missing-catalog fallback using Cursor's local task factory and verify both runtimes. Standalone Claude and combined installations, IDE and Agents Window routing, parameter forwarding and exact restoration were checked on a separate copy of 3.20.21. These are automated checks; a live SSH Explore run with a different selected model still needs manual confirmation. Tooltip tests cover every effort and context variant using the native Markdown layout.

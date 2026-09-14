@@ -147,3 +147,13 @@ test('image and PDF inputs retain their original bytes and conversation position
  assert.equal(pickerModel(visual).supportsImages,true);
  assert.equal(pickerModel(model).supportsImages,false);
 });
+
+test('each picker variant describes its selected effort and context',()=>{
+ for(const v of pickerModel(model).variants){
+  const effort=v.parameterValues.find(p=>p.id==='reasoning').value;
+  const text=v.tooltipData.markdownContent;
+  assert.match(text,/1k context window/);
+  assert.ok(text.includes('*Version: '+(effort==='xhigh'?'very high':effort)+' effort'));
+  assert.equal(text.includes(', fast*'),v.parameterValues.find(p=>p.id==='fast').value==='true');
+ }
+});
