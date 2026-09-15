@@ -12,8 +12,9 @@ export async function verifySubagentLifecycle(source, prefixes) {
     method('classifyBubble(', 'getBubbleLoadState(')];
   // cancelChat also has call sites earlier in the bundle.
   methods[0]=method(source.includes('cancelChat(e){const t=this.composerDataService')?'cancelChat(e){const t=this.composerDataService':'cancelChat(t){const e=this.composerDataService','async cancelCurrentStep(');
-  const native=new Function('subscriptionComposer','__subscriptionSubagentPrefixes','SZe','Cde','fu','Zg','tr','cs','Wr','bs',
-    'return ({'+methods.join(',')+'})')(subscriptionComposer,prefixes,1,1,()=>false,()=>false,fn=>fn(),fn=>fn(),()=>{},()=>{});
+  const stopService=source.match(/if\(subscriptionComposer\(this.composerDataService,[\w$]+,__subscriptionSubagentPrefixes\)\)this.instantiationService.invokeFunction\(s=>s.get\(([\w$]+)\)\).cancelSubagentTree/)[1];
+  const native=new Function('subscriptionComposer','__subscriptionSubagentPrefixes',stopService,'fu','Zg','tr','cs','Wr','bs',
+    'return ({'+methods.join(',')+'})')(subscriptionComposer,prefixes,1,()=>false,()=>false,fn=>fn(),fn=>fn(),()=>{},()=>{});
   for(const prefix of prefixes) {
     const controllers=new Map(['parent','child','grandchild','unrelated'].map(id=>[id,new AbortController()]));
     const handles=new Map([...controllers.keys()].map(id=>[id,{data:{composerId:id,status:id==='parent'?'completed':'generating',modelConfig:{modelName:prefix+'test'},subagentComposerIds:id==='parent'?['child']:id==='child'?['grandchild']:[]}}]));

@@ -77,7 +77,7 @@ function once(source, before, after) {
   return source.replace(before, after);
 }
 
-export function patchSubagentLifecycle(source, surface, prefix) {
+export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21') {
   if (!['desktop','glass'].includes(surface)) throw new Error('Unknown workbench surface');
   if (!['chatgpt-codex/','claude-subscription/'].includes(prefix)) throw new Error('Unknown subscription provider');
   const registry = /var __subscriptionSubagentPrefixes=(\[[^;]+\]);/;
@@ -87,7 +87,7 @@ export function patchSubagentLifecycle(source, surface, prefix) {
     return source.replace(registry, 'var __subscriptionSubagentPrefixes='+JSON.stringify(prefixes)+';');
   }
   const desktop = surface === 'desktop', arg = desktop ? 'e' : 't', handle = desktop ? 't' : 'e';
-  const serviceId = desktop ? 'SZe' : 'Cde', untrack = desktop ? 'tr' : 'cs';
+  const serviceId = version==='3.20.23'?(desktop?'yZe':'Tde'):(desktop?'SZe':'Cde'), untrack = desktop ? 'tr' : 'cs';
   const own = 'subscriptionComposer(this._composerDataService,'+arg+',__subscriptionSubagentPrefixes)';
   source = once(source, 'async stopSubagentTree('+arg+'){',
     'async stopSubagentTree('+arg+'){if('+own+'){this.cancelSubagentTree('+arg+');return;}');
