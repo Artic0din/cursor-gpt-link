@@ -7,7 +7,7 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {buildPatches} from './src/patches.mjs';
 import {supportedBuild} from './src/supported-builds.mjs';
-import {installFiles, restoreFiles, hash} from './src/installation.mjs';
+import {installFiles, restoreFiles, installationRoot, hash} from './src/installation.mjs';
 import {stateDir, configPath, config} from './src/config.mjs';
 import {assertSupportedMac, signingIdentity, requireClosedCursor, requireWritableApp, verifyMacSignature, signMacApp} from './src/macos.mjs';
 export {macosMajorVersion, osMinimumMajor, machineArch, appBundlePath} from './src/macos.mjs';
@@ -105,7 +105,7 @@ Close Cursor before install or restore. See README.md for requirements.`);
   if (command === 'status') {
     if (!fs.existsSync(manifestPath)) { console.log('No installation recorded in ' + stateDir); return; }
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    verifyMacSignature(manifest.root);
+    verifyMacSignature(installationRoot(manifest));
     const valid = manifest.files.every(f => fs.existsSync(f.path) && hash(fs.readFileSync(f.path)) === f.patchedHash);
     console.log('Cursor ' + manifest.version + ': ' + (valid ? 'patched files verified' : 'files changed; possibly updated or installation incomplete'));
     if (!valid) process.exitCode = 1;
@@ -116,9 +116,10 @@ Close Cursor before install or restore. See README.md for requirements.`);
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     if (manifest.claudeManifest) throw new Error('Restore the Claude link first, then restore ChatGPT.');
     const identity = signingIdentity(config.signingIdentity);
-    assertSupportedMac(supportedBuild(manifest.root));
-    requireWritableApp(manifest.root);
-    restoreFiles(manifestPath, () => signMacApp(manifest.root, identity));
+    const root=installationRoot(manifest);
+    assertSupportedMac(supportedBuild(root));
+    requireWritableApp(root);
+    restoreFiles(manifestPath, () => signMacApp(root, identity));
     console.log('ChatGPT patch removed; Cursor signature and native loading verified.');
     return;
   }

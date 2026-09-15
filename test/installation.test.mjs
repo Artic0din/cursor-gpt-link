@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {installFiles, restoreFiles} from '../src/installation.mjs';
+import {installFiles, restoreFiles, installationRoot} from '../src/installation.mjs';
+
+test('legacy manifests recover one app root and reject paths in another app',()=>{
+  const root='/Applications/Cursor.app/Contents/Resources/app';
+  const legacy={files:[{path:root+'/out/main.js'},{path:root+'/product.json'}]};
+  assert.equal(installationRoot(legacy),root);
+  assert.equal(installationRoot({...legacy,root}),root);
+  assert.throws(()=>installationRoot({...legacy,root:'/Applications/Other.app/Contents/Resources/app'}),/same Cursor app/);
+  assert.throws(()=>installationRoot({files:[legacy.files[0],{path:'/tmp/product.json'}]}),/same Cursor app/);
+});
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cursor-gpt-link-install-test-'));

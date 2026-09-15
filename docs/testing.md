@@ -13,7 +13,7 @@ A matching version label alone is insufficient to establish compatibility.
 
 ## Current checks
 
-All 39 local tests passed, covering authentication, request normalization, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All 40 local tests passed, covering authentication, request normalization, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 Native build verification passed for both workbenches, both runtime parameter normalizers, SSH resource/cancellation forwarding, startup code and the workbench checksum.
 
 Both links installed directly in `/Applications/Cursor.app`, GPT first and Claude second, with an existing Apple signing identity.

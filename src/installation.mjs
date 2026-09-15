@@ -4,6 +4,15 @@ import crypto from 'node:crypto';
 
 export const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 
+export function installationRoot(manifest) {
+  const files=manifest.files;
+  if(!Array.isArray(files)||!files.length||files.some(file=>typeof file.path!=='string'))throw new Error('Invalid installation file paths.');
+  const main=files.find(file=>file.path.endsWith(path.sep+path.join('out','main.js')));
+  const root=manifest.root??(main&&path.dirname(path.dirname(main.path)));
+  if(typeof root!=='string'||!path.isAbsolute(root)||files.some(file=>!path.resolve(file.path).startsWith(path.resolve(root)+path.sep)))throw new Error('Installation files must belong to the same Cursor app.');
+  return path.resolve(root);
+}
+
 export function installFiles(pending, {backupDir, manifestPath, version, commit, root}) {
   if (fs.existsSync(manifestPath)) throw new Error('An installation manifest already exists.');
   const manifest = {version, commit, root, installedAt:new Date().toISOString(), files:[]};

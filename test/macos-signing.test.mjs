@@ -54,7 +54,7 @@ test('signing requires an Apple identity before changing the app', () => {
   try {
     assert.throws(() => signingIdentity(), /CURSOR_MACOS_SIGN_IDENTITY/);
     assert.throws(() => signingIdentity('-'), /CURSOR_MACOS_SIGN_IDENTITY/);
-    assert.throws(() => signingIdentity('0'.repeat(40)), /not available in Keychain/);
+    if(process.platform==='darwin')assert.throws(() => signingIdentity('0'.repeat(40)), /not available in Keychain/);
   } finally {
     if (previous !== undefined) process.env.CURSOR_MACOS_SIGN_IDENTITY = previous;
   }
