@@ -212,3 +212,12 @@ test('disconnect cancels the active upstream HTTP stream without another model r
     await Promise.all([new Promise(r=>server.close(r)),new Promise(r=>upstream.close(r))]);
   }
 });
+
+test('context display separates standard and extended windows without shrinking provider capacity',()=>{
+ for(const capacity of [128000,200000,272000,1000000]){
+  const entry={...model,context_window:capacity},picker=pickerModel(entry);
+  assert.equal(picker.contextTokenLimit,Math.min(200000,capacity));
+  assert.equal(picker.contextTokenLimitForMaxMode,capacity);
+  assert.equal(providerModel(entry).capabilities.context_length,capacity);
+ }
+});

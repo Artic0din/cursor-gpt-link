@@ -63,7 +63,7 @@ export function pickerModel(m) {
     inputboxShortModelName: m.display_name,
     defaultOn: true, supportsAgent: true, supportsImages: m.input_modalities?.includes('image') || false,
     supportsThinking: true, supportsNonMaxMode: true, supportsMaxMode: contexts.length>1,
-    supportsPlanMode: true, supportsAutoContext: true, contextTokenLimit: fullContext,
+    supportsPlanMode: true, supportsAutoContext: true, contextTokenLimit: standardContext, contextTokenLimitForMaxMode: fullContext,
     autoContextMaxTokens: fullContext, namedModelSectionIndex: 0,
     vendorName: 'openai', vendor:{id:2,displayName:'OpenAI'}, modelPickerBadges:[], cloudAgentEffortModes:[], tagline: 'ChatGPT subscription, local connection',
     tooltipData:modelTooltip(m.display_name,m.description,standardContext,m.default_reasoning_level),
