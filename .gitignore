@@ -10,3 +10,4 @@ test-profile/
 *.log
 *.tmp
 .env*
+!.env.example

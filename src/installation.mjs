@@ -4,9 +4,9 @@ import crypto from 'node:crypto';
 
 export const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 
-export function installFiles(pending, {backupDir, manifestPath, version, commit}) {
+export function installFiles(pending, {backupDir, manifestPath, version, commit, root}) {
   if (fs.existsSync(manifestPath)) throw new Error('An installation manifest already exists.');
-  const manifest = {version, commit, installedAt:new Date().toISOString(), files:[]};
+  const manifest = {version, commit, root, installedAt:new Date().toISOString(), files:[]};
   for (let n = 0; n < pending.length; n++) {
     const file = pending[n];
     const backup = path.join(backupDir, n + '-' + path.basename(file.path));
@@ -29,7 +29,7 @@ export function installFiles(pending, {backupDir, manifestPath, version, commit}
   return manifest;
 }
 
-export function restoreFiles(manifestPath) {
+export function restoreFiles(manifestPath, finalize = () => {}) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   // Check every file before writing any of them. Accept originals to allow
   // recovery after an interrupted installation or restoration.
@@ -39,5 +39,6 @@ export function restoreFiles(manifestPath) {
     if (hash(fs.readFileSync(file.backup)) !== file.originalHash) throw new Error('Backup is damaged; restore stopped: ' + file.backup);
   }
   for (const file of manifest.files) fs.copyFileSync(file.backup, file.path);
+  finalize();
   fs.renameSync(manifestPath, manifestPath + '.restored-' + Date.now());
 }

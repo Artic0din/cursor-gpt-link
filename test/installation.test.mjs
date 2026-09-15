@@ -52,3 +52,15 @@ test('restore can resume after an interrupted restoration', t => {
   restoreFiles(options.manifestPath);
   assert.equal(fs.readFileSync(pending[1].path, 'utf8'), 'original 1');
 });
+
+test('restore retains recovery state until signing succeeds', t => {
+  const {pending, options} = fixture(t);
+  installFiles(pending, options);
+  assert.throws(() => restoreFiles(options.manifestPath, () => {throw new Error('signing interrupted');}), /signing interrupted/);
+  assert.equal(fs.existsSync(options.manifestPath), true);
+  let finalized = false;
+  restoreFiles(options.manifestPath, () => {finalized = true;});
+  assert.equal(finalized, true);
+  assert.equal(fs.existsSync(options.manifestPath), false);
+  assert.equal(fs.readFileSync(pending[0].path, 'utf8'), 'original 0');
+});

@@ -8,22 +8,22 @@ This release targets the reviewed macOS builds listed below. It is not a general
 
 | Item | Current status |
 | --- | --- |
-| Cursor | 3.20.17, 3.20.11 and 3.20.7, macOS 26+ (Apple Silicon, arm64) |
+| Cursor | 3.20.17, macOS 26+ (Apple Silicon, arm64) |
 | Latest Cursor commit | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` (3.20.17) |
-| Cursor 3.20.11 commit | `69d099d6568dc97e110ba8184614faf51c4040b0` |
-| Previous Cursor commit | `979197d5570b168c034c634b3e21f2bea3ea5be0` (3.20.7) |
-| Latest local test date | September 12, 2026 |
-| Node.js used for testing | 26.7.0 |
-| Codex CLI used for testing | 0.153.4 |
-| Text generation through the bridge | Verified with GPT-6 Astra |
-| Tool calls | Confirmed working in manual local Cursor testing; bridge round trip also verified |
-| File edits | Confirmed working in manual local Cursor testing |
+| Latest local test date | September 15, 2026 |
+| Node.js used for testing | 25.2.1 |
+| Codex CLI used for testing | 0.154.0 |
+| macOS signing | Hardened runtime, entitlements and native loading checked |
 | Reasoning selection | Forwarding verified in both local runtimes |
-| IDE and Agents Window | Both bundles patched and syntax checked; manual results do not specify coverage of each window |
-| Remote SSH sessions | Responses and remote file edits confirmed working after the 0.1.1 routing fix |
+| IDE and Agents Window | Native IDE file edit and read-back passed; Agents Window live testing is pending |
+| Remote SSH sessions | Routing checked in both bundles; live macOS SSH testing is pending |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
-Cursor 3.20.17 has its own reviewed patch definitions; support for 3.20.11 and 3.20.7 is retained. The installer selects a version-specific patch and checks the version, commit and SHA-256 hashes of five original JavaScript bundles. It stops before patching an unknown or already modified build. Automated checks passed on 3.20.17; a new manual UI test is still pending. See [testing notes](docs/testing.md) for the scope of verification.
+Only Cursor 3.20.17 has verified macOS arm64 hashes in this release.
+Use a local workspace with the **This Mac** environment; cloud agents cannot reach these local bridges and are unsupported.
+The retained 3.20.11 and 3.20.7 metadata describes historical Windows builds and is rejected on macOS.
+The installer checks the exact version, commit and all six original-file hashes before writing.
+See [testing notes](docs/testing.md) for current macOS results and separately labelled upstream history.
 
 ## What it adds
 
@@ -48,10 +48,10 @@ Do not assume a fixed twofold speed increase or a fixed usage multiplier. Availa
 ## Requirements
 
 * macOS 26 or newer on an Apple Silicon (arm64) Mac and one of the exact Cursor builds listed above. The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
-* Node.js 22 or newer on PATH. Only Node.js 26.7.0 has been tested locally.
+* Node.js 22 or newer on PATH.
 * A Codex executable and a ChatGPT account with access to the requested models.
 * Existing file-based Codex authentication in `auth.json` and a populated `models_cache.json` in the same Codex home.
-* Permission to modify your Cursor installation directory.
+* A Cursor app owned by your macOS user and an existing Apple signing identity in Keychain.
 
 This release reads file-based Codex authentication only. It does not read the macOS Keychain or import browser cookies. API-key-only authentication is not supported. Refer to OpenAI's [authentication documentation](https://learn.chatgpt.com/docs/auth) for sign-in and credential storage options.
 
@@ -60,13 +60,15 @@ This release reads file-based Codex authentication only. It does not read the ma
 Clone this repository into a local directory, then open a terminal there:
 
 ```bash
-git clone https://github.com/vertexitde/cursor-gpt-link.git
+git clone https://github.com/Artic0din/cursor-gpt-link.git
 cd cursor-gpt-link
 node patcher.mjs check
 ```
 
 If you have not signed in, run `codex login` and complete the ChatGPT sign-in. Open Codex once so it refreshes its model catalog. There are no npm dependencies to install.
 
+Run `security find-identity -v -p codesigning` and set `CURSOR_MACOS_SIGN_IDENTITY` to the 40-character SHA-1 of the Apple identity to use.
+The selection is saved locally for later restoration.
 Close all Cursor windows and background processes, then run:
 
 ```bash
@@ -80,24 +82,33 @@ Start Cursor again and select a model with the OpenAI symbol. The bridge starts 
 The installer detects the standard macOS Cursor locations. It looks for the Codex desktop executable, then for `codex` on PATH. For other locations:
 
 ```bash
-node patcher.mjs install --cursor-root "/Applications/Cursor.app/Contents/Resources/app" --codex-path "/opt/homebrew/bin/codex" --codex-home "$HOME/MyCodexHome" --port 43188
+node patcher.mjs install --cursor-root "/Applications/Cursor.app/Contents/Resources/app" --codex-path "/opt/homebrew/bin/codex" --codex-home "$HOME/MyCodexHome" --port 43187
 ```
 
 `--cursor-root` must point to `Contents/Resources/app` inside `Cursor.app`, not the `Cursor.app` bundle itself. `--codex-path` must resolve to the `codex` executable.
 
 Configuration, a copy of the bridge runtime, model catalogs and original-file backups are stored in `~/Library/Application Support/cursor-gpt-link`. Set `CURSOR_GPT_LINK_HOME` before running the patcher to choose a different state directory. Use the same value for subsequent status and restore commands. The runtime is copied during installation, so moving the repository afterwards does not break autostart. The Node.js executable must stay at its installation path.
 
-Patching files under `Contents` invalidates the application seal, so the installer re-signs the `Cursor.app` bundle ad-hoc (`codesign --force --deep --sign -`) after writing. If `--cursor-root` points outside a `Cursor.app` bundle, re-sign that copy manually with the same command.
+The installer patches the selected app directly; it does not make a full-app copy.
+It signs the native binaries and app bundle with the selected Apple identity while preserving entitlements and hardened-runtime flags.
+Signature verification and an Electron native-loading check must pass before installation succeeds.
+The app and state directory are restricted to their owner because patched bundles contain local bridge keys.
 
 ## Remote SSH
 
-Version 0.1.1 fixes the Remote SSH routing. Model requests run in Cursor's dedicated local runtime and reach the bridge on your PC. Tool calls use Cursor's existing workspace execution path, so file edits and commands still run on the SSH host. The existing approval and cancellation paths are retained.
+The inherited Remote SSH routing sends model requests through Cursor's dedicated local runtime to the bridge on your Mac.
+Tool calls use Cursor's existing workspace execution path, so file edits and commands still run on the SSH host.
+The existing approval and cancellation paths are retained.
 
 The remote host does not need Codex CLI, a ChatGPT sign-in, copied account credentials or a forwarded bridge port. Use your existing local sign-in and reload the SSH window after applying the patch.
 
-The earlier patch ran model requests in the workspace extension host. In an SSH session that process runs on the remote machine, where `127.0.0.1` refers to that machine rather than your PC. The dedicated runtime existed in Cursor but was disabled by default. This patch makes it available and selects it for ChatGPT models in remote workspaces. Other models retain their existing runtime selection.
+The earlier patch ran model requests in the workspace extension host.
+In an SSH session that process runs on the remote machine, where `127.0.0.1` refers to that machine rather than your Mac.
+This patch selects Cursor's dedicated local runtime for ChatGPT models in remote workspaces.
+Other models retain their existing runtime selection.
 
-Responses and remote file edits have been confirmed in a manual SSH test after the fix. Both workbench routing methods are checked against the supported builds. Separate manual Agents Window coverage is still pending.
+Both workbench routing methods passed synthetic checks against the supported Mac build.
+Earlier upstream SSH file-edit reports came from Windows; fresh macOS SSH testing is pending.
 
 To upgrade an existing public installation, close Cursor, run `node patcher.mjs restore` using the same state directory, update this repository with `git pull`, then run `node patcher.mjs install`. For a private prototype, use its original restore command first.
 
@@ -115,7 +126,12 @@ npm run uninstall
 
 This is equivalent to `node patcher.mjs restore`. If Claude is also installed, remove it first with `npm run uninstall` in its repository. Then remove ChatGPT. Backups restore the state before each patch; removing the underlying patch first can invalidate the other installation manifest.
 
-Restore verifies both the installed files and the backups before copying originals back. Backups are retained. It refuses to overwrite files changed by a Cursor update or another patch. If an update has replaced the application, use a clean Cursor installation instead of forcing old backups over the new version. The patcher has no force option.
+Restore validates the six file backups, restores those resources, and signs the app again before reporting success.
+It retains recovery state if signing fails, so restoration can be retried.
+These file backups do not restore the vendor's original code signature; reinstall official Cursor for that.
+If signing is interrupted or an update replaces the application, reinstall the supported official Cursor build and run the installers again, GPT first and Claude second.
+Installation archives stale state only after verifying the freshly installed original files.
+The patcher has no force option.
 
 Restoring removes the autostart code. An already running bridge can remain until it is stopped or macOS is restarted. It accepts requests only with its local key. You can inspect its process command line for the `cursor-gpt-link/runtime/bridge.mjs` path before stopping that process. The patcher does not stop unrelated Node.js processes.
 
@@ -143,10 +159,10 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 
 ## Limitations
 
-* Remote SSH responses and file edits are confirmed in the tested setup. Other remote configurations and separate Agents Window SSH coverage still need testing.
-* Only the listed macOS 26+ (Apple Silicon) client builds are supported. Windows and Linux clients, other remote environments and cloud agents are untested.
-* The file hashes in `src/supported-build*.json` are carried over from the earlier review and have not yet been re-recorded from macOS arm64 installations. Until they are, the installer rejects macOS files as unsupported. Record them on a Mac with `node scripts/capture-hashes.mjs` (see Development).
-* Tool calls and file edits work in manual local Cursor testing. Separate coverage of the IDE and Agents Window, including approvals and cancellation, has not yet been recorded.
+* Live macOS SSH responses and file edits remain unverified; both workbench routing methods have synthetic coverage.
+* Only the listed macOS 26+ (Apple Silicon) client build is supported. Windows and Linux clients and cloud agents are unsupported.
+* Older Cursor versions retain historical Windows metadata and cannot be installed on macOS until their Mac bundles are separately verified.
+* Native IDE tool calls and file edits passed on macOS. Agents Window, approvals and cancellation still need separate live checks.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.
 * The bridge uses Codex's local model cache. After switching accounts, open Codex to refresh its cache and reload the Cursor window. A stale cache may temporarily show models the new account cannot use.
 * Initial model entries are embedded when installing. Refreshing the picker normally replaces them with the bridge catalog; an unavailable bridge can leave stale entries visible.
@@ -157,10 +173,13 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 ```bash
 npm test
 node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"
-node scripts/capture-hashes.mjs "/Applications/Cursor.app/Contents/Resources/app"
 ```
 
-Unit tests use synthetic credentials and model data and do not make requests to OpenAI. The optional build verification reads original Cursor files locally, validates hashes, generates candidate patches in a temporary directory, checks syntax and exercises reasoning and Fast forwarding. It does not modify Cursor. No Cursor binaries, bundled source, model caches or account files are distributed here. After the macOS-only switch, the recorded hashes are still the previously reviewed values: re-record them from the exact macOS arm64 installations with `capture-hashes.mjs` and copy the output into the matching `src/supported-build*.json` before installing on macOS.
+Unit tests use synthetic credentials and model data and do not make requests to OpenAI.
+The optional build verification reads original Cursor files locally, validates hashes, generates candidates, checks syntax and exercises reasoning and Fast forwarding without modifying Cursor.
+For a new supported build, run `node scripts/capture-hashes.mjs` with its original `Contents/Resources/app` path, review and copy the complete output into the matching metadata, then run build verification.
+Capture rejects incomplete apps, invalid signatures and executables without arm64 support; it also accepts an Intel Node process running through Rosetta on an Apple Silicon Mac.
+No Cursor binaries, bundled source, model caches or account files are distributed here.
 
 When reporting a problem, include your Cursor version and commit, operating system, Node.js version and a redacted error message. Do not attach `auth.json`, `config.json`, model caches, patched application files or backup directories.
 

@@ -7,10 +7,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {appBundlePath, assertSupportedMac, verifyMacSignature} from '../src/macos.mjs';
 
 const root = process.argv[2];
 if (!root) throw new Error('Usage: node scripts/capture-hashes.mjs PATH_TO_ORIGINAL_RESOURCES_APP');
-if (process.platform !== 'darwin') console.error('Warning: hashes should be captured on macOS; this host reports ' + process.platform + '.');
 const files = [
   'out/vs/workbench/workbench.desktop.main.js',
   'out/vs/workbench/workbench.glass.main.js',
@@ -24,8 +25,12 @@ const product = JSON.parse(fs.readFileSync(path.join(root, 'product.json'), 'utf
 const hashes = {};
 for (const relative of files) {
   const full = path.join(root, relative);
-  if (!fs.existsSync(full)) continue;
+  if (!fs.existsSync(full)) throw new Error('Missing required Cursor file: ' + relative);
   hashes[relative] = crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex');
 }
+assertSupportedMac({platform:'darwin', arch:'arm64', osMinimum:'26.0'});
+verifyMacSignature(root);
+const architectures = execFileSync('/usr/bin/lipo', ['-archs', path.join(appBundlePath(root), 'Contents/MacOS/Cursor')], {encoding:'utf8'}).trim().split(/\s+/);
+if (!architectures.includes('arm64')) throw new Error('The selected Cursor app does not contain an arm64 executable.');
 console.log(JSON.stringify({version:pkg.version, commit:product.commit,
   platform:'darwin', arch:'arm64', osMinimum:'26.0', files:hashes}, null, 2));

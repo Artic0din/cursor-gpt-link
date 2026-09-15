@@ -1,86 +1,72 @@
-# Testing notes
+# Testing and compatibility
 
-Updated on September 12, 2026.
+## Verified macOS build
 
-## Environment
+The September 15, 2026 checks used macOS 27.0 on Apple Silicon, Node.js 25.2.1 and Cursor 3.20.17.
+The exact Cursor commit is `0c32194e3fb5ffaced9fb36430b860ec301e1fc0`.
+The minimum supported OS is macOS 26; live application checks were performed on macOS 27.
+Codex CLI 0.154.0 was signed into ChatGPT.
 
-| Component | Version |
-| --- | --- |
-| Operating system | macOS 26+, arm64 (Apple Silicon) |
-| Cursor | 3.20.17, 3.20.11 and 3.20.7 |
-| Cursor 3.20.17 commit | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` |
-| Cursor 3.20.11 commit | `69d099d6568dc97e110ba8184614faf51c4040b0` |
-| Cursor 3.20.7 commit | `979197d5570b168c034c634b3e21f2bea3ea5be0` |
-| Node.js | 26.7.0 |
-| Codex CLI | 0.153.4 |
+[The 3.20.17 metadata](../src/supported-build-3.20.17.json) records six hashes captured from the original, signature-verified Mac application.
+The 3.20.11 and 3.20.7 metadata describes Windows bundles and is rejected on macOS.
+A matching version label alone is insufficient to establish compatibility.
 
-The original JavaScript hashes are recorded in [the 3.20.7 metadata](../src/supported-build.json) and [the 3.20.11 metadata](../src/supported-build-3.20.11.json). File hashes are used because the same version label is not sufficient to establish that minified patch anchors are compatible. After the macOS-only switch these are still the previously reviewed values: re-record them from the exact macOS arm64 builds with `node scripts/capture-hashes.mjs "/Applications/Cursor.app/Contents/Resources/app"` before installing on macOS. Until then `node patcher.mjs check` fails on hash mismatch by design.
+## Current checks
 
-## Cursor 3.20.17 update
+All 39 local tests passed, covering authentication, request normalization, installation/restore failures, CLI symlinks and startup after the launching host exits.
+Native build verification passed for both workbenches, both runtime parameter normalizers, SSH resource/cancellation forwarding, startup code and the workbench checksum.
 
-On September 12, 2026, the model mapping, picker rendering, usage-card components and local routing symbols were reviewed against the new desktop and Agents Window bundles. The new definitions check the exact commit and original file hashes, including `product.json`.
+Both links installed directly in `/Applications/Cursor.app`, GPT first and Claude second, with an existing Apple signing identity.
+Strict signature verification, Electron native loading and both installation manifests passed after combined installation.
+Both bridge workers started automatically with Cursor and appeared in the native model picker.
+Cloud agents are unsupported: use a local workspace and the This Mac environment.
 
-Candidate syntax, unique anchors, both native SSH routing methods, reasoning and Fast forwarding, and the workbench checksum passed. Installation together with Claude was checked on a separate local copy before installing both patches in Cursor. Linked installation manifests and original-file backups passed hash verification. These checks preserve the workspace execution resources and cancellation signal. A fresh manual IDE and Agents Window test, including SSH, is still pending for this build.
+Signing fixtures verify preservation of hardened runtime and entitlements after patching and resource restoration.
+The fixture uses a disposable executable and an injected test signer; production requires an available Apple identity and refuses ad-hoc signing.
+No full-app backup is required; six resource backups and recovery manifests are retained.
 
-The reviewed hashes are in [the 3.20.17 metadata](../src/supported-build-3.20.17.json).
+Combined removal was tested on the real app: GPT refused removal before Claude, Claude restoration preserved GPT, and final GPT restoration recovered all six original resource hashes.
+Both restoration steps passed strict signature verification and native loading.
 
-## Automated checks
+GPT-5.6 Luna completed a native IDE file edit and read-back in a disposable local folder.
+The file contained exactly `GPT_NATIVE_OK` followed by a newline.
 
-All 24 public unit tests passed locally. They cover partial model refreshes, explicit model hiding, account-separated saved catalogs, supported reasoning and Fast combinations, the default speed setting, request normalization, unsupported settings, local bearer authentication and browser-origin rejection. Installation tests verify exact restoration, refusal of changed application files or damaged backups, and resuming an interrupted restore. Remote routing tests check runtime selection, extension activation and preservation of workspace resources and cancellation signals in both workbenches. Additional checks cover the icon labels, subscription usage mapping, quota errors, and exact bridge-process selection on restart. Tests use synthetic data without access to a real account.
+## Repeatable checks
 
-The GitHub workflow runs this suite on macOS 26 with Node.js 22, 24 and 26. These unit jobs do not contain or test a real Cursor installation.
+```bash
+npm test
+node patcher.mjs status
+```
 
-Local build verification uses original files from the tested installation. It checks unique patch anchors and JavaScript syntax in both workbenches, both local runtimes and the main process. It invokes each patched runtime's parameter normalizer for Low, Medium, High, Very high, Max and Ultra, with Fast both on and off, and checks the desktop workbench checksum.
+Tests use synthetic data and do not make model requests.
+CI runs on macOS 26 with Node.js 22, 24 and 26; those runners do not contain a real Cursor installation.
 
-## Live checks on the preceding local prototype
+For an original supported app, run `node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"`.
+It validates hashes, generates candidates, checks syntax and invokes native routing and parameter normalization without modifying Cursor.
+For a new build, capture its original files with `scripts/capture-hashes.mjs`, review the complete metadata and patch anchors, then run build verification.
+Capture rejects missing files, invalid signatures and executables without arm64 support.
 
-These checks exercised the same bridge protocol and runtime hooks before packaging this public release. They are not claims of an end-to-end public installer or UI test.
+With the bridge running, `npm run test:attachments` makes real image and PDF requests and consumes subscription usage.
+Bridge checks alone do not establish complete Cursor UI coverage.
 
-* A GPT-6 Astra text request completed through the bridge.
-* A function tool call with arguments 19 and 23 completed; returning 42 to the model completed the follow-up response.
-* Installed file hashes matched the private prototype's installation manifest.
-* Runtime parameter forwarding passed for both `cursor-agent-exec` and `cursor-local-agent-runtime`.
+## Cursor updates and recovery
 
-The streaming tool test collected `response.output_item.done` events. In these checks, `response.completed.output` was empty, so checking only that final output array would miss the streamed result.
+1. Close Cursor and restore Claude before restoring GPT.
+2. Restore validates every resource backup before writing and re-signs the app before reporting success.
+3. Retry an interrupted restore while its manifest remains present; unknown file changes stop restoration.
+4. Reinstall official Cursor to recover its vendor signature or a failed signing operation.
+5. Install GPT followed by Claude on the recognized build; stale manifests are archived only after original files or a valid companion installation are verified.
 
-## Manual Cursor testing
+Never restore old resources over a newer build or edit hashes to bypass compatibility checks.
+A new Mac build needs original-file capture, anchor review and separate validation.
+The six resource backups do not contain the original vendor code signature.
 
-On September 10, 2026, the project owner reported successful tool calls and file edits in local Cursor usage. This confirms that those operations work in the tested setup, beyond the earlier standalone bridge checks.
+## Historical upstream results and remaining coverage
 
-The report did not identify which window was used or establish separate coverage of the IDE and Agents Window. Approvals and cancellation were not reported separately.
+Earlier September 10–12 notes were inherited from the Windows implementation.
+They described bridge tool calls, local and SSH file edits, image/PDF input and parameter forwarding.
+They do not establish macOS installer, GUI, authentication renewal or SSH coverage.
+The preceding test history remains in Git.
 
-Remote SSH initially failed because model requests ran in the remote workspace extension host and tried to reach the bridge through the remote machine's loopback address. The 0.1.1 fix enables Cursor's existing dedicated local runtime and selects it for ChatGPT models in remote workspaces. Tool execution continues through the existing workspace resources.
-
-After applying this fix and reloading the SSH window, the project owner confirmed that both responses and remote file edits work. No remote Codex installation, remote ChatGPT sign-in or SSH port forwarding was needed. This confirms the tested SSH setup; it does not establish coverage of every remote configuration or both window types.
-
-The local build verification also executes the actual patched routing method extracted from each workbench with synthetic services. It verifies that ChatGPT SSH turns use the local runtime with the original workspace resources and cancellation signal, while local sessions and ordinary models preserve their existing routing.
-
-## Fast processing
-
-Priority requests were tested with Astra, Sol, Terra, Luna and GPT-5.5. The service reported `default`, including for a direct request outside the bridge. Sending the literal API field `service_tier: "fast"` was rejected. The patch sends `priority`.
-
-The UI control and request field work, but faster processing and its usage multiplier are unverified. A test requiring a `priority` or `fast` response tier did not pass. This remains an open limitation, not a successful Fast test.
-
-## Still to verify
-
-* Separate IDE and Agents Window coverage, including approvals and cancellation, beyond the confirmed local tool calls and file edits.
-* The public installer and restore flow against a fresh real application installation with Cursor closed.
-* Interactive sign-in and automatic renewal in a fresh public installation.
-* Actual priority processing when requested.
-* Other accounts and installation layouts.
-
-## Subscription usage and model labels
-
-Version 0.1.2 incorporates the locally developed subscription usage card, OpenAI picker icon, quota error handling and bridge restart changes. The public tests use synthetic usage responses. The usage UI patches are checked against both original workbench bundles; a fresh interactive test of the combined public build is still pending.
-
-## Cursor 3.20.11
-
-Version 0.1.3 adds a separate patch implementation for build `69d099d6568dc97e110ba8184614faf51c4040b0`. Build verification against original files passed for both workbenches, both runtimes and the main process. The actual patched workbench methods passed synthetic SSH-routing checks, and both runtime normalizers preserved every tested reasoning and Fast combination. The workbench checksum matched. No application files are distributed in this repository.
-
-The local prototype returned a successful ChatGPT response after the update, and its catalog and subscription usage endpoints responded successfully. The project owner confirmed model selection and a file edit after reloading the updated Cursor, without specifying provider or window. This is not a separate manual SSH test on 3.20.11. The public installer was checked through candidate generation against original files; it was not used to replace the running private installation.
-
-## Attachments
-
-On September 11, 2026, the installed local GPT bridge with GPT-5.6 Luna identified a generated PNG color and read a validation word embedded only in a PDF. No conversion or text extraction was needed in the bridge. Unit coverage verifies that image and PDF bytes and tool-call history survive normalization, and vision capability follows the model catalog. The request-body ceiling is now 64 MiB including base64 overhead. Separate attachment testing through each Cursor window and SSH is still pending.
-
-See [OpenAI file inputs](https://developers.openai.com/api/docs/guides/file-inputs) for the public input schema; the live check validates the subscription endpoint separately.
+Fresh macOS SSH file edits, live subagents, cancellation, fresh sign-in/renewal and other account layouts remain unverified.
+Fast forwards `service_tier: "priority"`, but historical requests returned `default`; actual priority processing remains unverified.

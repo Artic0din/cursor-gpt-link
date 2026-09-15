@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {bridgeCommandPattern, bridgeCommandPosixPattern, buildAutostart} from '../src/autostart.mjs';
+import {bridgeCommandPattern, bridgeCommandPosixPattern, buildBridgeLauncher} from '../src/autostart.mjs';
 
 test('bridge restart matches only the exact Node executable and installed bridge', () => {
   const node = '/opt/homebrew/bin/node';
@@ -46,7 +46,7 @@ test('pkill pattern uses POSIX classes macOS pkill understands', () => {
 });
 
 test('autostart restarts the installed bridge with pkill on macOS', () => {
-  const code = buildAutostart({nodePath:'/opt/homebrew/bin/node', bridgePath:"/Users/test/O'Brien/runtime/bridge.mjs", stateDir:"/Users/test/O'Brien"});
+  const code = buildBridgeLauncher({nodePath:'/opt/homebrew/bin/node', bridgePath:"/Users/test/O'Brien/runtime/bridge.mjs", stateDir:"/Users/test/O'Brien"});
   assert.ok(code.includes('pkill'));
   assert.ok(code.includes('process.platform==="darwin"'));
   assert.ok(code.includes('CURSOR_GPT_LINK_HOME'));

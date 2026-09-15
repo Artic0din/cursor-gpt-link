@@ -21,6 +21,6 @@ test('bundle path resolves Cursor.app from the resources directory', t => {
   t.after(() => fs.rmSync(base, {recursive:true, force:true}));
   const root = path.join(base, 'Cursor.app', 'Contents', 'Resources', 'app');
   fs.mkdirSync(root, {recursive:true});
-  assert.equal(appBundlePath(root), path.join(base, 'Cursor.app'));
-  assert.throws(() => appBundlePath(path.join(base, 'plain-dir')), /Re-sign it manually/);
+  assert.equal(appBundlePath(root), fs.realpathSync(path.join(base, 'Cursor.app')));
+  assert.throws(() => appBundlePath(path.join(base, 'plain-dir')), /Cursor.app/);
 });
