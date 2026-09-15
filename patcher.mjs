@@ -135,7 +135,7 @@ Close Cursor before install or restore. See README.md for requirements.`);
     fs.renameSync(manifestPath, manifestPath + '.replaced-' + Date.now());
   }
   const identity = signingIdentity(config.signingIdentity);
-  requireWritableApp(root);
+  const appMode = requireWritableApp(root);
   const port = Number(options.port || 43187);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Port must be an integer between 1024 and 65535.');
   await availablePort(port);
@@ -161,7 +161,7 @@ Close Cursor before install or restore. See README.md for requirements.`);
   const runtime = path.join(stateDir, 'runtime');
   fs.mkdirSync(runtime, {recursive:true});
   for (const name of ['bridge.mjs', 'config.mjs', 'openai-icon.mjs']) fs.copyFileSync(path.join(sourceDir, 'src', name), path.join(runtime, name));
-  installFiles(pending, {backupDir, manifestPath, version:build.version, commit:build.commit, root});
+  installFiles(pending, {backupDir, manifestPath, version:build.version, commit:build.commit, root, appMode});
   console.log('Signing Cursor and checking native loading...');
   signMacApp(root, identity);
   console.log('Installed. Start Cursor and select a model with the OpenAI symbol.');

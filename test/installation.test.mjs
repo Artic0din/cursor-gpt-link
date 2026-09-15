@@ -73,3 +73,22 @@ test('restore retains recovery state until signing succeeds', t => {
   assert.equal(fs.existsSync(options.manifestPath), false);
   assert.equal(fs.readFileSync(pending[0].path, 'utf8'), 'original 0');
 });
+
+test('recorded app permissions stay private until restoration finishes', {skip:process.platform==='win32'}, t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cursor-mode-test-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const app=path.join(dir,'Cursor.app'),root=path.join(app,'Contents/Resources/app');
+  fs.mkdirSync(path.join(root,'out'),{recursive:true});fs.chmodSync(app,0o750);
+  const file=path.join(root,'out/main.js');fs.writeFileSync(file,'original');
+  const backupDir=path.join(dir,'backups');fs.mkdirSync(backupDir);
+  const manifestPath=path.join(dir,'installed.json');
+  const manifest=installFiles([{path:file,content:'patched'}],{backupDir,manifestPath,root,appMode:0o750});
+  assert.equal(manifest.appMode,0o750);
+  assert.equal(fs.statSync(app).mode&0o777,0o700);
+  assert.throws(()=>restoreFiles(manifestPath,()=>{throw new Error('signing interrupted');}),/signing interrupted/);
+  assert.equal(fs.statSync(app).mode&0o777,0o700);
+  assert.ok(fs.existsSync(manifestPath));
+  restoreFiles(manifestPath);
+  assert.equal(fs.readFileSync(file,'utf8'),'original');
+  assert.equal(fs.statSync(app).mode&0o777,0o750);
+});

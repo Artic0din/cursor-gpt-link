@@ -13,7 +13,7 @@ A matching version label alone is insufficient to establish compatibility.
 
 ## Current checks
 
-All 40 local tests passed, covering authentication, request normalization, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All 42 local tests passed, covering authentication, request normalization, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 Native build verification passed for both workbenches, both runtime parameter normalizers, SSH resource/cancellation forwarding, startup code and the workbench checksum.
 
 Both links installed directly in `/Applications/Cursor.app`, GPT first and Claude second, with an existing Apple signing identity.
@@ -23,6 +23,9 @@ Cloud agents are unsupported: use a local workspace and the This Mac environment
 
 Signing fixtures verify preservation of hardened runtime and entitlements after patching and resource restoration.
 The fixture uses a disposable executable and an injected test signer; production requires an available Apple identity and refuses ad-hoc signing.
+The checks also reject a correctly signed Intel-only executable, leave preflight permissions unchanged and restore the recorded app mode only after restoration finishes.
+Interrupted restoration keeps the app private and its recovery manifest available.
+Legacy manifests without an original mode retain current permissions; official reinstallation recovers the vendor defaults.
 No full-app backup is required; six resource backups and recovery manifests are retained.
 
 Combined removal was tested on the real app: GPT refused removal before Claude, Claude restoration preserved GPT, and final GPT restoration recovered all six original resource hashes.

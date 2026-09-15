@@ -93,6 +93,7 @@ The installer patches the selected app directly; it does not make a full-app cop
 It signs the native binaries and app bundle with the selected Apple identity while preserving entitlements and hardened-runtime flags.
 Signature verification and an Electron native-loading check must pass before installation succeeds.
 The app and state directory are restricted to their owner because patched bundles contain local bridge keys.
+App preflight leaves permissions unchanged; the restriction is applied only when the prepared patch is written.
 
 ## Remote SSH
 
@@ -128,6 +129,8 @@ This is equivalent to `node patcher.mjs restore`. If Claude is also installed, r
 
 Restore validates the six file backups, restores those resources, and signs the app again before reporting success.
 It retains recovery state if signing fails, so restoration can be retried.
+New manifests record the original app permissions and restore them after final removal.
+Older manifests without this record retain the current permissions until official reinstallation.
 These file backups do not restore the vendor's original code signature; reinstall official Cursor for that.
 If signing is interrupted or an update replaces the application, reinstall the supported official Cursor build and run the installers again, GPT first and Claude second.
 Installation archives stale state only after verifying the freshly installed original files.

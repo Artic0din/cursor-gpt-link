@@ -58,14 +58,24 @@ export function requireClosedCursor() {
 
 export function requireWritableApp(root) {
   const app = appBundlePath(root);
-  if (fs.statSync(app).uid !== process.getuid()) throw new Error('Cursor.app must be owned by the current user.');
+  const stat = fs.statSync(app);
+  if (stat.uid !== process.getuid()) throw new Error('Cursor.app must be owned by the current user.');
   fs.accessSync(app, fs.constants.W_OK);
-  // The patched bundles contain local bridge credentials.
-  fs.chmodSync(app, 0o700);
+  return stat.mode & 0o7777;
+}
+
+export function setAppMode(root, mode) {
+  // Older manifests did not record permissions; do not guess their prior mode.
+  if (mode === undefined) return;
+  if (!Number.isInteger(mode) || mode < 0 || mode > 0o7777) throw new Error('Invalid recorded Cursor app permissions.');
+  fs.chmodSync(appBundlePath(root), mode);
 }
 
 export function verifyMacSignature(root, execute = run) {
-  execute('/usr/bin/codesign', ['--verify', '--deep', '--strict', appBundlePath(root)]);
+  const app = appBundlePath(root);
+  execute('/usr/bin/codesign', ['--verify', '--deep', '--strict', app]);
+  const architectures = execute('/usr/bin/lipo', ['-archs', path.join(app, 'Contents/MacOS/Cursor')]).toString().trim().split(/\s+/);
+  if (!architectures.some(arch => arch.startsWith('arm64'))) throw new Error('Cursor must contain an Apple Silicon executable.');
 }
 
 export function signMacApp(root, identity, execute = run) {

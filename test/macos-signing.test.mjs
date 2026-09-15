@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {execFileSync,spawnSync} from 'node:child_process';
-import {signMacApp, verifyMacSignature, requireWritableApp, signingIdentity} from '../src/macos.mjs';
+import {signMacApp, verifyMacSignature, requireWritableApp, signingIdentity, setAppMode} from '../src/macos.mjs';
 
 test('signing and resource restoration preserve hardened runtime and entitlements', {skip:process.platform !== 'darwin'}, t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cursor-signing-test-'));
@@ -21,8 +21,10 @@ test('signing and resource restoration preserve hardened runtime and entitlement
   const resource = path.join(root, 'fixture.txt');
   fs.writeFileSync(resource, 'original');
   execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', '--options', 'runtime', '--entitlements', entitlements, app], {stdio:'pipe'});
-  requireWritableApp(root);
-  assert.equal(fs.statSync(app).mode & 0o777, 0o700);
+  const originalMode=fs.statSync(app).mode&0o777;
+  assert.equal(requireWritableApp(root),originalMode);
+  assert.equal(fs.statSync(app).mode&0o777,originalMode,'preflight must preserve app permissions');
+  setAppMode(root,0o700);
   let nativeLoads = 0;
   // CI has no Apple private key; only this synthetic app uses an ad-hoc identity.
   const execute = (file, args, options = {}) => {
@@ -35,7 +37,9 @@ test('signing and resource restoration preserve hardened runtime and entitlement
     fs.writeFileSync(resource, content);
     assert.throws(() => verifyMacSignature(root));
     signMacApp(root, '0'.repeat(40), execute);
+    if(content==='original')setAppMode(root,originalMode);
     verifyMacSignature(root);
+    assert.equal(fs.statSync(app).mode&0o777,content==='original'?originalMode:0o700);
     const details = spawnSync('/usr/bin/codesign', ['--display', '--verbose=4', app], {encoding:'utf8'});
     assert.equal(details.status,0,details.stderr);
     assert.match(details.stderr, /flags=.*runtime/);
@@ -44,6 +48,9 @@ test('signing and resource restoration preserve hardened runtime and entitlement
     assert.equal(fs.readFileSync(resource, 'utf8'), content);
   }
   assert.equal(nativeLoads, 2);
+  setAppMode(root,undefined);
+  assert.equal(fs.statSync(app).mode&0o777,originalMode);
+  assert.throws(()=>setAppMode(root,'777'),/Invalid recorded Cursor app permissions/);
   assert.throws(() => signMacApp(root, '-', execute), /Apple signing identity/);
   assert.throws(() => signMacApp(root, '0'.repeat(40), () => { throw new Error('signing interrupted'); }), /Reinstall the official Cursor app/);
 });
@@ -58,4 +65,16 @@ test('signing requires an Apple identity before changing the app', () => {
   } finally {
     if (previous !== undefined) process.env.CURSOR_MACOS_SIGN_IDENTITY = previous;
   }
+});
+
+test('a valid signature cannot admit an Intel-only Cursor executable', {skip:process.platform!=='darwin'}, t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cursor-intel-test-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const app=path.join(dir,'Cursor.app'),root=path.join(app,'Contents/Resources/app');
+  const executable=path.join(app,'Contents/MacOS/Cursor');
+  fs.mkdirSync(root,{recursive:true});fs.mkdirSync(path.dirname(executable),{recursive:true});
+  fs.writeFileSync(path.join(app,'Contents/Info.plist'),'<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Cursor</string><key>CFBundleIdentifier</key><string>test.cursor.intel</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>');
+  execFileSync('/usr/bin/lipo',['/usr/bin/true','-thin','x86_64','-output',executable],{stdio:'pipe'});
+  execFileSync('/usr/bin/codesign',['--force','--sign','-',app],{stdio:'pipe'});
+  assert.throws(()=>verifyMacSignature(root),/Apple Silicon executable/);
 });
