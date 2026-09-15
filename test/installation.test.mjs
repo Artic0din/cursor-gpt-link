@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {installFiles, restoreFiles} from '../src/installation.mjs';
+import {installFiles, restoreFiles, installationRoot} from '../src/installation.mjs';
+
+test('legacy manifests recover one app root and reject paths in another app',()=>{
+  const root='/Applications/Cursor.app/Contents/Resources/app';
+  const legacy={files:[{path:root+'/out/main.js'},{path:root+'/product.json'}]};
+  assert.equal(installationRoot(legacy),root);
+  assert.equal(installationRoot({...legacy,root}),root);
+  assert.throws(()=>installationRoot({...legacy,root:'/Applications/Other.app/Contents/Resources/app'}),/same Cursor app/);
+  assert.throws(()=>installationRoot({files:[legacy.files[0],{path:'/tmp/product.json'}]}),/same Cursor app/);
+});
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cursor-gpt-link-install-test-'));
@@ -51,4 +60,35 @@ test('restore can resume after an interrupted restoration', t => {
   fs.copyFileSync(manifest.files[0].backup, pending[0].path);
   restoreFiles(options.manifestPath);
   assert.equal(fs.readFileSync(pending[1].path, 'utf8'), 'original 1');
+});
+
+test('restore retains recovery state until signing succeeds', t => {
+  const {pending, options} = fixture(t);
+  installFiles(pending, options);
+  assert.throws(() => restoreFiles(options.manifestPath, () => {throw new Error('signing interrupted');}), /signing interrupted/);
+  assert.equal(fs.existsSync(options.manifestPath), true);
+  let finalized = false;
+  restoreFiles(options.manifestPath, () => {finalized = true;});
+  assert.equal(finalized, true);
+  assert.equal(fs.existsSync(options.manifestPath), false);
+  assert.equal(fs.readFileSync(pending[0].path, 'utf8'), 'original 0');
+});
+
+test('recorded app permissions stay private until restoration finishes', {skip:process.platform==='win32'}, t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cursor-mode-test-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const app=path.join(dir,'Cursor.app'),root=path.join(app,'Contents/Resources/app');
+  fs.mkdirSync(path.join(root,'out'),{recursive:true});fs.chmodSync(app,0o750);
+  const file=path.join(root,'out/main.js');fs.writeFileSync(file,'original');
+  const backupDir=path.join(dir,'backups');fs.mkdirSync(backupDir);
+  const manifestPath=path.join(dir,'installed.json');
+  const manifest=installFiles([{path:file,content:'patched'}],{backupDir,manifestPath,root,appMode:0o750});
+  assert.equal(manifest.appMode,0o750);
+  assert.equal(fs.statSync(app).mode&0o777,0o700);
+  assert.throws(()=>restoreFiles(manifestPath,()=>{throw new Error('signing interrupted');}),/signing interrupted/);
+  assert.equal(fs.statSync(app).mode&0o777,0o700);
+  assert.ok(fs.existsSync(manifestPath));
+  restoreFiles(manifestPath);
+  assert.equal(fs.readFileSync(file,'utf8'),'original');
+  assert.equal(fs.statSync(app).mode&0o777,0o750);
 });

@@ -4,24 +4,48 @@ export function bridgeCommandPattern(nodePath, bridgePath) {
   return '^"?' + escapeRegex(nodePath) + '"?\\s+"?' + escapeRegex(bridgePath) + '"?\\s*$';
 }
 
-export function buildAutostart({nodePath, bridgePath, stateDir}) {
-  // Restart only this installation's worker, not other Node.js processes or
-  // bridges installed in another state directory. The pattern is passed as an
-  // argument to pkill (no shell), so paths containing quotes cannot become
-  // shell instructions.
-  const pattern = bridgeCommandPattern(nodePath, bridgePath);
+export function bridgeCommandPosixPattern(nodePath, bridgePath) {
+  return '^"?' + escapeRegex(nodePath) + '"?[[:space:]]+"?' + escapeRegex(bridgePath) + '"?[[:space:]]*$';
+}
+
+export function buildBridgeLauncher({nodePath, bridgePath, stateDir}) {
+  // Restart only this installation's worker. The pattern is passed as an
+  // argument to pkill (no shell), matching cursor-gpt-link.
+  const pattern = bridgeCommandPosixPattern(nodePath, bridgePath);
   return `
-/* cursor-chatgpt-bridge autostart (macOS 26+) */
-import("node:child_process").then(({execFile:bridgeKill,spawn:bridgeSpawn})=>{
-  const start=()=>{
-    const child=bridgeSpawn(${JSON.stringify(nodePath)},[${JSON.stringify(bridgePath)}],{
-      detached:true,stdio:"ignore",
-      env:{...process.env,ELECTRON_RUN_AS_NODE:undefined,CURSOR_GPT_LINK_HOME:${JSON.stringify(stateDir)}}
-    });
-    child.on("error",()=>{});child.unref();
-  };
-  if(process.platform==="darwin")bridgeKill("pkill",["-i","-f",${JSON.stringify(pattern)}],()=>start());
-  else start();
+const {execFile,spawn}=require("node:child_process");
+const start=()=>{
+  const worker=spawn(${JSON.stringify(nodePath)},[${JSON.stringify(bridgePath)}],{
+    detached:true,stdio:["ignore","ignore",2],
+    env:{...process.env,ELECTRON_RUN_AS_NODE:undefined,...${JSON.stringify(stateDir?{CURSOR_GPT_LINK_HOME:stateDir}:{})}}
+  });
+  worker.on("error",error=>console.error("Local bridge startup failed:",error.message));worker.unref();
+};
+if(process.platform==="darwin")execFile("pkill",["-f",${JSON.stringify(pattern)}],{timeout:5000},error=>{
+  if(error&&error.code!==1){console.error("Local bridge restart failed:",error.message);return;}start();
 });
+else start();
+`;
+}
+
+export function buildAutostart(options) {
+  // A detached launcher owns the entire stop/start sequence. A secondary
+  // Cursor process may exit before the previous bridge worker is replaced.
+  return `
+/* cursor subscription bridge autostart */
+import("node:child_process").then(async({spawn})=>{
+  const fs=await import("node:fs"),path=await import("node:path");
+  const state=path.join(${JSON.stringify(options.stateDir)}||path.dirname(${JSON.stringify(options.bridgePath)}),".state");
+  fs.mkdirSync(state,{recursive:true,mode:0o700});fs.chmodSync(state,0o700);
+  const log=fs.openSync(path.join(state,"bridge-startup.log"),"a",0o600);fs.fchmodSync(log,0o600);
+  try{
+  const launcher=spawn(${JSON.stringify(options.nodePath)},["-e",${JSON.stringify(buildBridgeLauncher(options))}],{
+    detached:true,stdio:["ignore","ignore",log],
+    env:{...process.env,ELECTRON_RUN_AS_NODE:undefined}
+  });
+  await new Promise((resolve,reject)=>{launcher.once("spawn",resolve);launcher.once("error",reject);});launcher.unref();
+  }catch(error){fs.writeSync(log,"Local bridge launcher failed: "+error.message+"\\n");}
+  finally{fs.closeSync(log);}
+}).catch(error=>console.error("Local bridge launcher failed:",error.message));
 `;
 }

@@ -1,12 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {setAppMode} from './macos.mjs';
 
 export const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 
-export function installFiles(pending, {backupDir, manifestPath, version, commit}) {
+export function installationRoot(manifest) {
+  const files=manifest.files;
+  if(!Array.isArray(files)||!files.length||files.some(file=>typeof file.path!=='string'))throw new Error('Invalid installation file paths.');
+  const main=files.find(file=>file.path.endsWith(path.sep+path.join('out','main.js')));
+  const root=manifest.root??(main&&path.dirname(path.dirname(main.path)));
+  if(typeof root!=='string'||!path.isAbsolute(root)||files.some(file=>!path.resolve(file.path).startsWith(path.resolve(root)+path.sep)))throw new Error('Installation files must belong to the same Cursor app.');
+  return path.resolve(root);
+}
+
+export function installFiles(pending, {backupDir, manifestPath, version, commit, root, appMode}) {
   if (fs.existsSync(manifestPath)) throw new Error('An installation manifest already exists.');
-  const manifest = {version, commit, installedAt:new Date().toISOString(), files:[]};
+  const manifest = {version, commit, root, appMode, installedAt:new Date().toISOString(), files:[]};
   for (let n = 0; n < pending.length; n++) {
     const file = pending[n];
     const backup = path.join(backupDir, n + '-' + path.basename(file.path));
@@ -16,6 +26,7 @@ export function installFiles(pending, {backupDir, manifestPath, version, commit}
   // Persist recovery information before any application file is written.
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), {flag:'wx'});
   try {
+    if (appMode !== undefined) setAppMode(root, 0o700);
     for (const file of pending) fs.writeFileSync(file.path, file.content);
     for (const file of manifest.files) {
       if (hash(fs.readFileSync(file.path)) !== file.patchedHash) throw new Error('Post-write verification failed: ' + file.path);
@@ -23,13 +34,14 @@ export function installFiles(pending, {backupDir, manifestPath, version, commit}
   } catch (error) {
     // Keep the manifest if rollback fails so recovery can be retried.
     for (const file of manifest.files) fs.copyFileSync(file.backup, file.path);
+    setAppMode(root, appMode);
     fs.renameSync(manifestPath, manifestPath + '.rolled-back-' + Date.now());
     throw error;
   }
   return manifest;
 }
 
-export function restoreFiles(manifestPath) {
+export function restoreFiles(manifestPath, finalize = () => {}) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   // Check every file before writing any of them. Accept originals to allow
   // recovery after an interrupted installation or restoration.
@@ -39,5 +51,7 @@ export function restoreFiles(manifestPath) {
     if (hash(fs.readFileSync(file.backup)) !== file.originalHash) throw new Error('Backup is damaged; restore stopped: ' + file.backup);
   }
   for (const file of manifest.files) fs.copyFileSync(file.backup, file.path);
+  finalize();
+  setAppMode(manifest.root, manifest.appMode);
   fs.renameSync(manifestPath, manifestPath + '.restored-' + Date.now());
 }
