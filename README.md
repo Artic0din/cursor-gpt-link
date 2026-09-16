@@ -8,11 +8,12 @@ This release targets the reviewed Windows builds listed below. It is not a gener
 
 | Item | Current status |
 | --- | --- |
-| Cursor | 3.20.23, 3.20.21, 3.20.17, 3.20.11 and 3.20.7, Windows x64 |
-| Latest Cursor commit | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` (3.20.23) |
+| Cursor | 3.21.1, 3.20.23, 3.20.21, 3.20.17, 3.20.11 and 3.20.7, Windows x64 |
+| Latest Cursor commit | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` (3.21.1) |
+| Previous Cursor commit | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` (3.20.23) |
 | Cursor 3.20.11 commit | `69d099d6568dc97e110ba8184614faf51c4040b0` |
-| Previous Cursor commit | `979197d5570b168c034c634b3e21f2bea3ea5be0` (3.20.7) |
-| Latest local test date | September 15, 2026 |
+| Oldest Cursor commit | `979197d5570b168c034c634b3e21f2bea3ea5be0` (3.20.7) |
+| Latest local test date | September 16, 2026 |
 | Node.js used for testing | 26.7.0 |
 | Codex CLI used for testing | 0.153.4 |
 | Text generation through the bridge | Verified with GPT-6 Astra |
@@ -22,6 +23,8 @@ This release targets the reviewed Windows builds listed below. It is not a gener
 | IDE and Agents Window | Both bundles patched and syntax checked; manual results do not specify coverage of each window |
 | Remote SSH sessions | Responses and remote file edits confirmed working after the 0.1.1 routing fix |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
+
+Cursor 3.21.1 renamed the obfuscated workbench symbols and rotated the minified locals in both extension runtime bundles, so the anchors were re-derived for this build and the version-independent ones were widened to read their symbols out of the match. The automated checks pass on 3.21.1 for both workbench bundles and both runtime bundles, including the native model resolver, Explore settings, context budget, reasoning and Fast forwarding, subagent lifecycle, subagent registration, action manager and subscription settings checks. Both patches were installed together on a local 3.21.1, Cursor started with no workbench errors and both bridges served their model catalogs. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 Cursor 3.20.23 has its own reviewed patch definitions; support for 3.20.21, 3.20.17, 3.20.11 and 3.20.7 is retained. The installer checks the version, commit and original file hashes before applying a version-specific patch. Automated checks passed on 3.20.23, including standalone and combined installations. After installing both patches and starting Cursor 3.20.23, short live requests completed in the Agents Window with Claude Opus 5 High and GPT-6 Astra Medium (272K). Switching from Claude to ChatGPT in the same test conversation also worked. These prompts deliberately requested no tools or file changes. Fresh IDE, remote SSH, attachment and full subagent workflow checks remain pending for this build. See [testing notes](docs/testing.md) for the scope of verification.
 

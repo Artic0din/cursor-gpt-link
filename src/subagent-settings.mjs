@@ -35,13 +35,14 @@ export function patchSubagentSettingsWorkbench(source) {
     +'\n'+definition(selectedModelIds,'__ChatgptSelectedModelIds')+'\n';
 }
 export function patchSubagentSettingsRuntime(source) {
-  const matches=[...source.matchAll(/function ([\w$]+)\(e\)\{const t=\(\)=>!1,n=[\w$]+\(e\),r=null!=n\?n:e.localProvider;/g)];
+  // Cursor 3.21.1 rotated the minified locals in both runtime bundles.
+  const matches=[...source.matchAll(/function ([\w$]+)\(e\)\{const t=\(\)=>!1,([\w$]+)=[\w$]+\(e\),([\w$]+)=null!=\2\?\2:e\.localProvider;/g)];
   if(matches.length!==1)throw new Error('Local task configuration anchor is not unique');
   const match=matches[0],original=match[1];
   source=once(source,match[0],'function '+original+'(e){return __ChatgptConfigureTaskProps(e,__ChatgptNativeTaskProps(e))}'+match[0].replace('function '+original+'(','function __ChatgptNativeTaskProps('));
-  const input='modelId:f.modelDetails.modelId,modelInfo:T,localProvider:this.options.localProvider';
-  if(!source.includes('modelId:f.modelDetails.modelId,modelParameters:f.parameters,modelInfo:T,localProvider:this.options.localProvider'))
-    source=once(source,input,input.replace(',modelInfo:',',modelParameters:f.parameters,modelInfo:'));
+  const input=source.match(/modelId:([\w$]+)\.modelDetails\.modelId,(modelParameters:[\w$]+\.parameters,)?modelInfo:[\w$]+,localProvider:this\.options\.localProvider/);
+  if(!input)throw new Error('Local task model input anchor missing');
+  if(!input[2])source=once(source,input[0],input[0].replace(',modelInfo:',',modelParameters:'+input[1]+'.parameters,modelInfo:'));
   const params=[...source.matchAll(/return\{subagentConfig:([\w$]+),effectiveReadonly:[\s\S]{0,200}?resolvedModelId:([\w$]+),resolvedModelParameters:(.*?),subagentIdToResume:/g)];
   if(params.length!==1)throw new Error('Resolved subagent parameters anchor is not unique');
   const p=params[0];

@@ -87,7 +87,8 @@ export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21
     return source.replace(registry, 'var __subscriptionSubagentPrefixes='+JSON.stringify(prefixes)+';');
   }
   const desktop = surface === 'desktop', arg = desktop ? 'e' : 't', handle = desktop ? 't' : 'e';
-  const serviceId = version==='3.20.23'?(desktop?'yZe':'Tde'):(desktop?'SZe':'Cde'), untrack = desktop ? 'tr' : 'cs';
+  const serviceId = version==='3.21.1'?(desktop?'hZe':'ude'):version==='3.20.23'?(desktop?'yZe':'Tde'):(desktop?'SZe':'Cde');
+  const untrack = version==='3.21.1'?(desktop?'Xi':'Kr'):(desktop?'tr':'cs');
   const own = 'subscriptionComposer(this._composerDataService,'+arg+',__subscriptionSubagentPrefixes)';
   source = once(source, 'async stopSubagentTree('+arg+'){',
     'async stopSubagentTree('+arg+'){if('+own+'){this.cancelSubagentTree('+arg+');return;}');
@@ -102,9 +103,13 @@ export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21
   const stale = '(n===void 0||n.composer!=='+handle+')&&(n={composer:'+handle+',map:'+untrack+'(()=>'+handle+'.conversationMap)},this.cachedConversationMapRef=n);';
   source = once(source, stale, stale.replace(')&&(n=', '||('+handle+'.subagentInfo&&subscriptionComposer(this.composerDataService,this.composerId,__subscriptionSubagentPrefixes)&&n.map!=='+untrack+'(()=>'+handle+'.conversationMap)))&&(n='));
   // There are several transcript implementations; anchor the Solid composer one.
-  const matches = [...source.matchAll(/subscribeHeaders\((\w+)\)\{return ([\w$]+)\(\(\)=>\{const (\w+)=this.getComposerDataForReactiveTracking\(\);/g)];
+  // Cursor 3.21.1 returns an empty disposable when the store is already gone;
+  // do not hydrate through a disposed store.
+  const matches = [...source.matchAll(/subscribeHeaders\((\w+)\)\{return (this\._store\.isDisposed\?[\w$]+\.None:)?([\w$]+)\(\(\)=>\{const (\w+)=this.getComposerDataForReactiveTracking\(\);/g)];
   if (matches.length !== 1) throw new Error('Transcript subscription anchor is not unique');
-  source = once(source, matches[0][0], matches[0][0].replace('{return ', '{warmSubscriptionTranscript(this,__subscriptionSubagentPrefixes);return '));
+  const warm = 'warmSubscriptionTranscript(this,__subscriptionSubagentPrefixes);';
+  const hydrate = matches[0][2] ? 'if(!this._store.isDisposed)'+warm : warm;
+  source = once(source, matches[0][0], matches[0][0].replace('{return ', '{'+hydrate+'return '));
   source = once(source, 'dispose(){this.editDisplayCache.clear(),', 'dispose(){this.__subscriptionDisposed=true;this.editDisplayCache.clear(),');
   return 'var __subscriptionSubagentPrefixes='+JSON.stringify([prefix])+';\n'+
     [subscriptionComposer, subscriptionRequest, subscriptionRequestSignal, createSubscriptionSubagent, runSubscriptionSubagent, warmSubscriptionTranscript].map(fn=>fn.toString()).join('\n')+'\n'+source;

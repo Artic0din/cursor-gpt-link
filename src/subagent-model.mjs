@@ -5,8 +5,10 @@ export function normalizeChatgptSubagentModel(options) {
   return {...options,requestedModel:undefined};
 }
 export function patchSubagentModel(source) {
-  const anchor='const{subagentConfig:t,requestedModel:n,parentModelId:r';
-  if(source.split(anchor).length!==2)throw new Error('Subagent model resolver anchor is not unique');
+  // Cursor 3.21.1 rotated the minified locals in both runtime bundles.
+  const matches=[...source.matchAll(/const\{subagentConfig:[\w$]+,requestedModel:[\w$]+,parentModelId:[\w$]+/g)];
+  if(matches.length!==1)throw new Error('Subagent model resolver anchor is not unique');
+  const anchor=matches[0][0];
   if(source.includes('__normalizeChatgptSubagentModel'))throw new Error('Subagent model patch already present');
   return source.replace(anchor,'e=__normalizeChatgptSubagentModel(e);'+anchor)+'\n'+normalizeChatgptSubagentModel.toString().replace('function normalizeChatgptSubagentModel','function __normalizeChatgptSubagentModel')+'\n';
 }
