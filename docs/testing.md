@@ -1,13 +1,14 @@
 # Testing notes
 
-Updated on September 15, 2026.
+Updated on September 16, 2026.
 
 ## Environment
 
 | Component | Version |
 | --- | --- |
 | Operating system | Windows, x64 |
-| Cursor | 3.20.23, 3.20.21, 3.20.17, 3.20.11 and 3.20.7 |
+| Cursor | 3.21.1, 3.20.23, 3.20.21, 3.20.17, 3.20.11 and 3.20.7 |
+| Cursor 3.21.1 commit | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` |
 | Cursor 3.20.23 commit | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Cursor 3.20.21 commit | `f09fca384ceca23f7bf21f9c23655b162641d740` |
 | Cursor 3.20.17 commit | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` |
@@ -17,6 +18,18 @@ Updated on September 15, 2026.
 | Codex CLI | 0.153.4 |
 
 The original JavaScript hashes are recorded in [the 3.20.7 metadata](../src/supported-build.json) and [the 3.20.11 metadata](../src/supported-build-3.20.11.json). File hashes are used because the same version label is not sufficient to establish that minified patch anchors are compatible.
+
+## Cursor 3.21.1 update
+
+Reviewed on September 16, 2026 against commit `74f717017ddcbf0554cd8c91ec7e2fb56983a070`. Both workbenches renamed their minified identifiers again, and this time both agent runtime bundles also rotated their minified locals: the name sequence moved from `e,t,n,r,o,s` to `e,t,r,n,o,s`, and the two bundles no longer agree with each other. That broke every literal anchor and several regex anchors that had pinned those names, so the affected patches now read their symbols out of the anchor match instead: the reasoning branch, the local API type heuristic, the conversation action receiver and its protobuf namespace, the plan initializer, the local task configuration and the subagent model resolver.
+
+Both runtime bundles were also re-chunked. `main.js` shrank from 10.08 MB to 8.48 MB (agent-exec) and from 8.83 MB to 5.95 MB (local-agent-runtime), with the remainder moved into numbered webpack chunks beside it. Every patched anchor still lives in `main.js`.
+
+One behavioural change: `subscribeHeaders` now returns an empty disposable when its store is already disposed. The transcript warm-up is no longer run through a disposed store.
+
+The automated checks pass on 3.21.1 for both workbench bundles and both runtime bundles: syntax and unique anchors, subscription settings rendering and login action registration, the native action manager, the Max toggle and context budget, the subagent lifecycle, the subagent registration barrier, the native subagent model resolver, Explore settings, reasoning forwarding and the workbench checksum. Checks that previously pinned one bundle’s minified names were widened to resolve their dependencies by role.
+
+Both patches were installed together on a local 3.21.1, ChatGPT first and Claude second. Cursor started with no workbench errors in its logs, and both bridges answered with their model catalogs. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 ## Cursor 3.20.23 update
 
