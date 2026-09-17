@@ -77,6 +77,15 @@ function once(source, before, after) {
   return source.replace(before, after);
 }
 
+// Minified identifiers per reviewed build: the subagent service used to cancel a
+// tree, and the untracked reader around the transcript conversation map.
+const lifecycleSymbols = {
+  '3.20.21': {desktop:{service:'SZe', untrack:'tr'}, glass:{service:'Cde', untrack:'cs'}},
+  '3.20.23': {desktop:{service:'yZe', untrack:'tr'}, glass:{service:'Tde', untrack:'cs'}},
+  '3.21.1':  {desktop:{service:'hZe', untrack:'Xi'}, glass:{service:'ude', untrack:'Kr'}},
+  '3.21.9':  {desktop:{service:'pZe', untrack:'Xi'}, glass:{service:'lde', untrack:'Qr'}},
+};
+
 export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21') {
   if (!['desktop','glass'].includes(surface)) throw new Error('Unknown workbench surface');
   if (!['chatgpt-codex/','claude-subscription/'].includes(prefix)) throw new Error('Unknown subscription provider');
@@ -87,8 +96,8 @@ export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21
     return source.replace(registry, 'var __subscriptionSubagentPrefixes='+JSON.stringify(prefixes)+';');
   }
   const desktop = surface === 'desktop', arg = desktop ? 'e' : 't', handle = desktop ? 't' : 'e';
-  const serviceId = version==='3.21.1'?(desktop?'hZe':'ude'):version==='3.20.23'?(desktop?'yZe':'Tde'):(desktop?'SZe':'Cde');
-  const untrack = version==='3.21.1'?(desktop?'Xi':'Kr'):(desktop?'tr':'cs');
+  const symbols = (lifecycleSymbols[version] ?? lifecycleSymbols['3.20.21'])[surface];
+  const serviceId = symbols.service, untrack = symbols.untrack;
   const own = 'subscriptionComposer(this._composerDataService,'+arg+',__subscriptionSubagentPrefixes)';
   source = once(source, 'async stopSubagentTree('+arg+'){',
     'async stopSubagentTree('+arg+'){if('+own+'){this.cancelSubagentTree('+arg+');return;}');

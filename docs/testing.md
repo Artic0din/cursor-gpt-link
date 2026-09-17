@@ -1,13 +1,14 @@
 # Testing notes
 
-Updated on September 16, 2026.
+Updated on September 17, 2026.
 
 ## Environment
 
 | Component | Version |
 | --- | --- |
 | Operating system | Windows, x64 |
-| Cursor | 3.21.1, 3.20.23, 3.20.21, 3.20.17, 3.20.11 and 3.20.7 |
+| Cursor | 3.21.9, 3.21.1, 3.20.23, 3.20.21, 3.20.17, 3.20.11 and 3.20.7 |
+| Cursor 3.21.9 commit | `9998796a6096ce83d83a9332bfe7473b985db750` |
 | Cursor 3.21.1 commit | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` |
 | Cursor 3.20.23 commit | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Cursor 3.20.21 commit | `f09fca384ceca23f7bf21f9c23655b162641d740` |
@@ -18,6 +19,12 @@ Updated on September 16, 2026.
 | Codex CLI | 0.153.4 |
 
 The original JavaScript hashes are recorded in [the 3.20.7 metadata](../src/supported-build.json) and [the 3.20.11 metadata](../src/supported-build-3.20.11.json). File hashes are used because the same version label is not sufficient to establish that minified patch anchors are compatible.
+
+## Cursor 3.21.9 update
+
+Reviewed on September 17, 2026 against commit `9998796a6096ce83d83a9332bfe7473b985db750`. Both workbenches renamed their minified identifiers; the anchored code is structurally unchanged. The workbench symbols were derived with a script that locates each one by the role it plays (picker sections, default model mapping, local run gate, dedicated runtime host, activation, Plan & Usage card and hooks, login action registration, Task bubble types and subagent service). Run against the pristine 3.21.1 bundles, the script reproduced every symbol reviewed for that build before it was trusted with 3.21.9. The runtime bundle anchors, which read their symbols from the match since 3.21.1, needed no change.
+
+The automated checks pass on 3.21.9 for both workbench bundles and both runtime bundles, with the same coverage as 3.21.1. Both patches were installed together on a local 3.21.9, ChatGPT first and Claude second. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 ## Cursor 3.21.1 update
 
