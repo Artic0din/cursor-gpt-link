@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {getEventListeners} from 'node:events';
-import {subscriptionComposer, createSubscriptionSubagent, runSubscriptionSubagent, warmSubscriptionTranscript} from '../src/subagent-lifecycle.mjs';
+import {subscriptionComposer, createSubscriptionSubagent, runSubscriptionSubagent, warmSubscriptionTranscript, patchSubagentLifecycle} from '../src/subagent-lifecycle.mjs';
 const prefixes=['chatgpt-codex/','claude-subscription/'];
 function setup(model='chatgpt-codex/test') {
   const parentAbort=new AbortController();
@@ -76,4 +76,8 @@ test('repeated completed children do not accumulate parent abort listeners',asyn
   const before=getEventListeners(f.parentAbort.signal,'abort').length;
   for(let i=0;i<100;i++)await runSubscriptionSubagent(f.service,f.request,f.child,{},prefixes);
   assert.equal(getEventListeners(f.parentAbort.signal,'abort').length,before);
+});
+test('unknown lifecycle versions fail closed',()=>{
+  assert.throws(()=>patchSubagentLifecycle('source','desktop','chatgpt-codex/','3.99.0'),/Unsupported subagent lifecycle version/);
+  assert.throws(()=>patchSubagentLifecycle('source','desktop','chatgpt-codex/','3.20.17'),/Unsupported subagent lifecycle version/);
 });

@@ -97,7 +97,8 @@ export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21
     return source.replace(registry, 'var __subscriptionSubagentPrefixes='+JSON.stringify(prefixes)+';');
   }
   const desktop = surface === 'desktop', arg = desktop ? 'e' : 't', handle = desktop ? 't' : 'e';
-  const symbols = (lifecycleSymbols[version] ?? lifecycleSymbols['3.20.21'])[surface];
+  const symbols = lifecycleSymbols[version]?.[surface];
+  if (!symbols) throw new Error('Unsupported subagent lifecycle version');
   const serviceId = symbols.service, untrack = symbols.untrack;
   const own = 'subscriptionComposer(this._composerDataService,'+arg+',__subscriptionSubagentPrefixes)';
   source = once(source, 'async stopSubagentTree('+arg+'){',
