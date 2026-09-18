@@ -43,6 +43,8 @@ test('malformed context windows are omitted from picker and provider lists', asy
     const listed = await (await fetch(base + '/v1/models', {headers})).json();
     assert.deepEqual(picker.models.map(m => m.name), ['chatgpt-codex/' + model.slug]);
     assert.deepEqual(listed.data.map(m => m.id), ['chatgpt-codex/' + model.slug]);
+    assert.equal(listed.data[0].context_window, model.context_window);
+    assert.equal(listed.data[0].capabilities.context_length, model.context_window);
     assert.equal(pickerModels().length, 1);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
@@ -190,6 +192,7 @@ test('MAX expands to the declared subscription window and preserves effort and F
   for(const p of variant.parameterValues.filter(p=>p.id!=='context'))assert.ok(selected.parameterValues.some(q=>q.id===p.id&&q.value===p.value));
  }
  assert.equal(providerModel(catalog).capabilities.context_length,272000);
+ assert.equal(providerModel(catalog).context_window,272000);
  assert.equal(pickerModel({...model,context_window:128000}).supportsMaxMode,false);
  assert.throws(()=>pickerModel({...model,context_window:undefined}),/valid context/);
 });
@@ -238,5 +241,6 @@ test('context display separates standard and extended windows without shrinking 
   assert.equal(picker.contextTokenLimit,Math.min(200000,capacity));
   assert.equal(picker.contextTokenLimitForMaxMode,capacity);
   assert.equal(providerModel(entry).capabilities.context_length,capacity);
+  assert.equal(providerModel(entry).context_window,capacity);
  }
 });

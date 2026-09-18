@@ -89,8 +89,9 @@ export function pickerModel(m) {
   };
 }
 export function providerModel(m) {
-  return {id:prefix+m.slug,object:'model',owned_by:'openai',api_types:['openai_responses'],
-    capabilities:{context_length:contextSizes(m).at(-1),supports_vision:m.input_modalities?.includes('image')||false,supports_reasoning:true}};
+  const context_window=contextSizes(m).at(-1);
+  return {id:prefix+m.slug,object:'model',owned_by:'openai',context_window,api_types:['openai_responses'],
+    capabilities:{context_length:context_window,supports_vision:m.input_modalities?.includes('image')||false,supports_reasoning:true}};
 }
 export function pickerModels() { return readModels().filter(validContextWindow).map(pickerModel); }
 

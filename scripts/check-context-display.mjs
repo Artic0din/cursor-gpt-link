@@ -22,4 +22,5 @@ for(const context of [200000,272000,200000]){
  assert.equal(api.percent(chat(context),models),162600/context*100);
 }
 assert.equal(providerModel(entry).capabilities.context_length,272000);
+assert.equal(providerModel(entry).context_window,272000);
 console.log('Native Agents Window: old 272K display reproduced; 200K/272K/200K switching and percentages corrected, runtime capacity retained.');

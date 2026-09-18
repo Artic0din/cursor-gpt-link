@@ -35,7 +35,7 @@ try {
     execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe'});
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
-      if(['3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))verifySubscriptionUi(file.content);
+      if(['3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))verifySubscriptionUi(file.content);
       if(['3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))await verifyConversationActionsWorkbench(file.content,['chatgpt-codex/']);
       if(['3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version)){verifyMaxMode(file.content);await verifySubagentLifecycle(file.content,['chatgpt-codex/']);}
       await verifyWorkbenchRouting(file.content, build.version);
