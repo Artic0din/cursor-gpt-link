@@ -1,4 +1,4 @@
-import {contextSizes,contextDefinition,contextLabel} from './context-options.mjs';
+import {contextSizes,contextDefinition,contextLabel,validContextWindow} from './context-options.mjs';
 import {modelTooltip} from './model-tooltip.mjs';
 import http from 'node:http';
 import {openaiIcon} from './openai-icon.mjs';
@@ -17,10 +17,13 @@ let refreshPromise;
 let loginProcess;
 
 export function mergeCatalog(previous,current) {
-  const models=new Map(previous.map(m=>[m.slug,m]));
+  const models=new Map();
+  for(const m of previous){
+    if(typeof m?.slug==='string'&&validContextWindow(m))models.set(m.slug,m);
+  }
   for(const m of current){
     if(m.visibility==='hide'){models.delete(m.slug);continue;}
-    if(m.visibility!=='list'||typeof m.slug!=='string'||!Array.isArray(m.supported_reasoning_levels))continue;
+    if(m.visibility!=='list'||typeof m.slug!=='string'||!Array.isArray(m.supported_reasoning_levels)||!validContextWindow(m))continue;
     models.set(m.slug,{slug:m.slug,display_name:m.display_name,description:m.description,
       default_reasoning_level:m.default_reasoning_level,supported_reasoning_levels:m.supported_reasoning_levels,
       visibility:m.visibility,context_window:m.context_window,input_modalities:m.input_modalities,
@@ -89,7 +92,7 @@ export function providerModel(m) {
   return {id:prefix+m.slug,object:'model',owned_by:'openai',api_types:['openai_responses'],
     capabilities:{context_length:contextSizes(m).at(-1),supports_vision:m.input_modalities?.includes('image')||false,supports_reasoning:true}};
 }
-export function pickerModels() { return readModels().map(pickerModel); }
+export function pickerModels() { return readModels().filter(validContextWindow).map(pickerModel); }
 
 export function credentials() {
   const a = JSON.parse(fs.readFileSync(path.join(codexHome, 'auth.json'), 'utf8'));
@@ -228,7 +231,7 @@ export async function handle(req, res) {
       try { return json(res,200,await fetchUsage()); }
       catch (error) { return json(res,502,{error:{message:error.message||'Usage data unavailable.'}}); }
     }
-    if (req.method === 'GET' && req.url === '/v1/models') return json(res,200,{object:'list',data:readModels().map(providerModel)});
+    if (req.method === 'GET' && req.url === '/v1/models') return json(res,200,{object:'list',data:readModels().filter(validContextWindow).map(providerModel)});
     if (req.method !== 'POST' || req.url !== '/v1/responses') return json(res,404,{error:{message:'Route not supported'}});
     const request = normalizeRequest(await readBody(req));
     const abort = new AbortController();

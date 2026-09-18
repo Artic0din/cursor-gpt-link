@@ -22,7 +22,7 @@ export function verifySubagentSettings(source) {
   const overrides=[{subagentType:'explore',selection:{case:'model',value:{modelId,parameters:selectedParams}}}];
   const base={modelId:parent,localProvider:{kind:'http',endpoints:[]},modelParameters:parentParams,subagentModelOverrides:overrides};
   assert.equal(native(base).subagentModelOverrides.explore.type,'inherit','Original missing-catalog failure reproduced');
-  const input={...base,availableModels:selectedModelIds([],overrides,parent).map(modelId=>({modelId}))};
+  const input={...base,availableModels:selectedModelIds([],overrides,parent).map(id=>({id}))};
   const props=configureTaskProps(input,native(input));
   assert.deepEqual(props.subagentModelOverrides.explore,{type:'model',modelId});
   assert.deepEqual(props.parentModelParameters,parentParams);

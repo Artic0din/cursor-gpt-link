@@ -13,7 +13,7 @@ process.env.CODEX_HOME = path.join(state, 'codex');
 fs.mkdirSync(process.env.CODEX_HOME);
 fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({key:'synthetic-test-key'}));
 fs.writeFileSync(path.join(process.env.CODEX_HOME, 'auth.json'), JSON.stringify({tokens:{access_token:'synthetic-token', account_id:'synthetic-account'}}));
-const {mergeCatalog, providerModel, pickerModel, normalizeRequest, handle, readModels, mapUpstreamError, fetchUsage} = await import('../src/bridge.mjs');
+const {mergeCatalog, providerModel, pickerModel, pickerModels, normalizeRequest, handle, readModels, mapUpstreamError, fetchUsage} = await import('../src/bridge.mjs');
 const model = {slug:'test-model', display_name:'Test <model>', description:'Synthetic fixture',
   visibility:'list', context_window:1000, input_modalities:['text'], default_reasoning_level:'medium',
   supported_reasoning_levels:[{effort:'low'}, {effort:'medium'}, {effort:'high'}, {effort:'xhigh'}, {effort:'max'}],
@@ -26,6 +26,25 @@ test('partial refresh retains known models and explicit hiding removes them', ()
   assert.deepEqual(mergeCatalog([model], [{slug:model.slug, visibility:'hide'}]), []);
   const refreshed = mergeCatalog([model], [{...model, additional_speed_tiers:undefined}]);
   assert.deepEqual(refreshed[0].additional_speed_tiers, ['fast']);
+});
+
+test('malformed context windows are omitted from picker and provider lists', async () => {
+  const broken = {...model, slug:'broken-model', context_window:undefined};
+  const zero = {...model, slug:'zero-window', context_window:0};
+  assert.deepEqual(mergeCatalog([model, broken, zero], [model, broken, zero]).map(m => m.slug), [model.slug]);
+  assert.deepEqual(mergeCatalog([broken], [{...model, visibility:'list'}]).map(m => m.slug), [model.slug]);
+  fs.writeFileSync(path.join(process.env.CODEX_HOME, 'models_cache.json'), JSON.stringify({models:[model, broken, zero]}));
+  const server = http.createServer(handle);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = 'http://127.0.0.1:' + server.address().port;
+  const headers = {Authorization:'Bearer synthetic-test-key'};
+  try {
+    const picker = await (await fetch(base + '/picker-models', {headers})).json();
+    const listed = await (await fetch(base + '/v1/models', {headers})).json();
+    assert.deepEqual(picker.models.map(m => m.name), ['chatgpt-codex/' + model.slug]);
+    assert.deepEqual(listed.data.map(m => m.id), ['chatgpt-codex/' + model.slug]);
+    assert.equal(pickerModels().length, 1);
+  } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
 test('all reasoning levels have independent normal and Fast variants', () => {
