@@ -1,3 +1,7 @@
+import {patchConversationActionsWorkbench,patchConversationActionsRuntime} from './conversation-actions.mjs';
+import {patchSubagentLifecycle} from './subagent-lifecycle.mjs';
+import {patchMaxMode} from './max-mode.mjs';
+import {patchSubagentSettingsWorkbench, patchSubagentSettingsRuntime} from './subagent-settings.mjs';
 import {patchSubagentModel} from './subagent-model.mjs';
 import {patchSubagentBubbles} from './subagent-bubbles.mjs';
 import {buildAutostart} from './autostart.mjs';
@@ -52,10 +56,10 @@ const prelude=`\n/* cursor-chatgpt-bridge 0.1.3: account credentials stay in loc
 wb=prelude+wb;
 wb=wrapGetter(wb);
 wb=replaceOnce(wb,'async refreshDefaultModels(){','async refreshDefaultModels(){await __refreshChatgptBridgeModels();');
-wb=wrapMap(wb,{plain:'const k=h(c);c=c.map(V=>ipn(V)),',claude:'const k=h(c);c=__withClaudeBridgeModels(c).map(V=>ipn(V)),',gpt:'const k=h(c);c=__withChatgptBridgeModels(c).map(V=>ipn(V)),'});
+wb=wrapMap(wb,{plain:'const k=h(c);c=c.map(V=>tpn(V)),',claude:'const k=h(c);c=__withClaudeBridgeModels(c).map(V=>tpn(V)),',gpt:'const k=h(c);c=__withChatgptBridgeModels(c).map(V=>tpn(V)),'});
 wb=patchPickerSections(wb,replaceOnce,{
-  groupReturn:'return c.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...re,...J],others:ae}:{leading:re,promoted:J,others:ae}',
-  promotedAnchor:'WP(pmt,{models:B.promoted,title:c?.promotedSectionTitle',modelsVar:'B',jsx:'WP',fmt:'pmt',renderModel:'x'});
+  groupReturn:'return c.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...re,...J],others:ce}:{leading:re,promoted:J,others:ce}',
+  promotedAnchor:'WP(hmt,{models:B.promoted,title:c?.promotedSectionTitle',modelsVar:'B',jsx:'WP',fmt:'hmt',renderModel:'x'});
 wb=replaceOnce(wb,'async getLocalAgentProviderConfig(e,t){',
  'async getLocalAgentProviderConfig(e,t){if(__isChatgptBridgeModel(t?.requestedModel?.modelId??e?.modelId))return{baseUrl:__chatgptBridgeBase+"/v1",apiKey:__chatgptBridgeKey,customHeaders:{}};');
 if(wb.includes('const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);')){
@@ -68,24 +72,27 @@ if(wb.includes('const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.m
     'const __claudeLocal=__isClaudeBridgeModel(u?.requestedModel?.modelId??i?.modelId);const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);');
   wb=wb.replaceAll('||__claudeLocal','||__claudeLocal||__chatgptLocal');
 }else{
-  wb=replaceOnce(wb,'async run(e,t,n,i,r,s,o,a,c,l,u){const h=Bjf(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:Zc.localMode});if(Zc.localMode){',
-   'async run(e,t,n,i,r,s,o,a,c,l,u){const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);const h=Bjf(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:Zc.localMode||__chatgptLocal});if(Zc.localMode||__chatgptLocal){');
+  wb=replaceOnce(wb,'async run(e,t,n,i,r,s,o,a,c,l,u){const h=vjf(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:Zc.localMode});if(Zc.localMode){',
+   'async run(e,t,n,i,r,s,o,a,c,l,u){const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);const h=vjf(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:Zc.localMode||__chatgptLocal});if(Zc.localMode||__chatgptLocal){');
 }
 wb+=`\nFe(class extends rt{constructor(){super({id:"cursor.chatgpt.login",title:{value:"ChatGPT: Sign in (subscription)",original:"ChatGPT: Sign in (subscription)"},f1:!0})}async run(e){try{const r=await fetch(__chatgptBridgeBase+"/login",{method:"POST",headers:{Authorization:"Bearer "+__chatgptBridgeKey}});if(!r.ok)throw new Error("Could not start sign-in");e.get(ai).info("Complete ChatGPT sign-in in your browser, then reload the Cursor window.")}catch(error){e.get(ai).error("Cannot reach the ChatGPT connection. Restart Cursor.")}}});\n`;
-wb=addUsage(wb,{fn:'function e_y(e){const t=Mfp(119)',jsx:'Kby',
+wb=addUsage(wb,{fn:'function Xvy(e){const t=ufp(119)',jsx:'Vvy',
   original:'title:"Plan & Usage",children:[yn,an,Kt,xn]',
-  claudeOnly:'title:"Plan & Usage",children:[yn,an,Kt,xn,Kby(__claudeUsageSection,{})]',
-  symbols:{jsx:'Kby',useState:'Glr',useEffect:'iby',card:'__',zs:'zs',bar:'xA',barStyle:'Qlr'}});
-wb=patchSubagentBubbles(patchRemoteRouting(wb,'desktop','3.20.17'),'desktop');
+  claudeOnly:'title:"Plan & Usage",children:[yn,an,Kt,xn,Vvy(__claudeUsageSection,{})]',
+  symbols:{jsx:'Vvy',useState:'Wlr',useEffect:'Jfy',card:'b_',zs:'zs',bar:'xA',barStyle:'Klr'}});
+wb=patchMaxMode(patchSubagentSettingsWorkbench(wb));
+wb=patchSubagentBubbles(patchRemoteRouting(wb,'desktop','3.20.21'),'desktop','3.20.21');
+wb=patchSubagentLifecycle(wb,'desktop','chatgpt-codex/');
+wb=patchConversationActionsWorkbench(wb,'desktop','chatgpt-codex/');
 pending.push({path:workbenchPath,content:wb});
 const glassPath=path.join(root,'out/vs/workbench/workbench.glass.main.js');
 let glass=prelude+fs.readFileSync(glassPath,'utf8');
 glass=wrapGetter(glass);
 glass=replaceOnce(glass,'async refreshDefaultModels(){','async refreshDefaultModels(){await __refreshChatgptBridgeModels();');
-glass=wrapMap(glass,{plain:'const y=d(l);l=l.map(U=>Izn(U)),',claude:'const y=d(l);l=__withClaudeBridgeModels(l).map(U=>Izn(U)),',gpt:'const y=d(l);l=__withChatgptBridgeModels(l).map(U=>Izn(U)),'});
+glass=wrapMap(glass,{plain:'const y=d(l);l=l.map(U=>xzn(U)),',claude:'const y=d(l);l=__withClaudeBridgeModels(l).map(U=>xzn(U)),',gpt:'const y=d(l);l=__withChatgptBridgeModels(l).map(U=>xzn(U)),'});
 glass=patchPickerSections(glass,replaceOnce,{
   groupReturn:'return l.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...te,...Q],others:ie}:{leading:te,promoted:Q,others:ie}',
-  promotedAnchor:'_F(u8t,{models:N.promoted,title:l?.promotedSectionTitle',modelsVar:'N',jsx:'_F',fmt:'u8t',renderModel:'k'});
+  promotedAnchor:'bF(s8t,{models:N.promoted,title:l?.promotedSectionTitle',modelsVar:'N',jsx:'bF',fmt:'s8t',renderModel:'k'});
 glass=replaceOnce(glass,'async getLocalAgentProviderConfig(t,e){',
  'async getLocalAgentProviderConfig(t,e){if(__isChatgptBridgeModel(e?.requestedModel?.modelId??t?.modelId))return{baseUrl:__chatgptBridgeBase+"/v1",apiKey:__chatgptBridgeKey,customHeaders:{}};');
 if(glass.includes('const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);')){
@@ -98,18 +105,21 @@ if(glass.includes('const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel
     'const __claudeLocal=__isClaudeBridgeModel(u?.requestedModel?.modelId??i?.modelId);const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);');
   glass=glass.replaceAll('||__claudeLocal','||__claudeLocal||__chatgptLocal');
 }else{
-  glass=replaceOnce(glass,'async run(t,e,n,i,r,s,o,a,l,c,u){const d=LSS(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:wl.localMode});if(wl.localMode){',
-   'async run(t,e,n,i,r,s,o,a,l,c,u){const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);const d=LSS(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:wl.localMode||__chatgptLocal});if(wl.localMode||__chatgptLocal){');
+  glass=replaceOnce(glass,'async run(t,e,n,i,r,s,o,a,l,c,u){const d=DyS(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:kl.localMode});if(kl.localMode){',
+   'async run(t,e,n,i,r,s,o,a,l,c,u){const __chatgptLocal=__isChatgptBridgeModel(u?.requestedModel?.modelId??i?.modelId);const d=DyS(u,{isRunningInTest:u.isRunningInTest??this.environmentService.enableSmokeTestDriver===!0,localMode:kl.localMode||__chatgptLocal});if(kl.localMode||__chatgptLocal){');
 }
 glass+=`\nDt(class extends Kt{constructor(){super({id:"cursor.chatgpt.login",title:{value:"ChatGPT: Sign in (subscription)",original:"ChatGPT: Sign in (subscription)"},f1:!0})}async run(){const r=await fetch(__chatgptBridgeBase+"/login",{method:"POST",headers:{Authorization:"Bearer "+__chatgptBridgeKey}});if(!r.ok)throw new Error("ChatGPT-Could not start sign-in")}});\n`;
-glass=addUsage(glass,{fn:'function Az1(t){const e=o3g(119)',jsx:'Ez1',
+glass=addUsage(glass,{fn:'function dH1(t){const e=dDg(119)',jsx:'lH1',
   original:'title:"Plan & Usage",children:[ft,wt,gt,Tt]',
-  claudeOnly:'title:"Plan & Usage",children:[ft,wt,gt,Tt,Ez1(__claudeUsageSection,{})]',
-  symbols:{jsx:'Ez1',useState:'Sus',useEffect:'Tz1',card:'iv',zs:'Js',bar:'Im',barStyle:'CTi'}});
-glass=patchSubagentBubbles(patchRemoteRouting(glass,'glass','3.20.17'),'glass');
+  claudeOnly:'title:"Plan & Usage",children:[ft,wt,gt,Tt,lH1(__claudeUsageSection,{})]',
+  symbols:{jsx:'lH1',useState:'cus',useEffect:'aH1',card:'iv',zs:'Js',bar:'Im',barStyle:'yTi'}});
+glass=patchMaxMode(patchSubagentSettingsWorkbench(glass));
+glass=patchSubagentBubbles(patchRemoteRouting(glass,'glass','3.20.21'),'glass','3.20.21');
+glass=patchSubagentLifecycle(glass,'glass','chatgpt-codex/');
+glass=patchConversationActionsWorkbench(glass,'glass','chatgpt-codex/');
 pending.push({path:glassPath,content:glass});
 for(const relative of ['extensions/cursor-agent-exec/dist/main.js','extensions/cursor-local-agent-runtime/dist/main.js']){
- pending.push({path:path.join(root,relative),content:patchSubagentModel(wrapRuntime(fs.readFileSync(path.join(root,relative),'utf8')))});
+ pending.push({path:path.join(root,relative),content:patchConversationActionsRuntime(patchSubagentSettingsRuntime(patchSubagentModel(wrapRuntime(fs.readFileSync(path.join(root,relative),'utf8')))),'chatgpt-codex/')});
 }
 const mainPath=path.join(root,'out/main.js');
 pending.push({path:mainPath,content:fs.readFileSync(mainPath,'utf8')+buildAutostart({nodePath,bridgePath,stateDir})});

@@ -1,5 +1,11 @@
 // Opt-in local verification against an original supported Cursor installation.
 // Bundled application code is read locally and is never included in this repository.
+import {verifySubscriptionUi} from './subscription-ui-check.mjs';
+import {verifyConversationActionsWorkbench,verifyConversationActionsRuntime} from './conversation-actions-check.mjs';
+import {verifySubagentLifecycle} from './subagent-lifecycle-check.mjs';
+import {verifyMaxMode,verifyContextBudget} from './max-mode-check.mjs';
+import {verifySubagentSettings} from './subagent-settings-check.mjs';
+import {verifySubagentModels} from './subagent-model-check.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -8,6 +14,7 @@ import crypto from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {buildPatches} from '../src/patches.mjs';
 import {supportedBuild} from '../src/supported-builds.mjs';
+import {verifySubagentRegistration} from './subagent-registration-check.mjs';
 import {verifyWorkbenchRouting} from './workbench-routing-check.mjs';
 
 const root = process.argv[2];
@@ -28,13 +35,21 @@ try {
     execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe'});
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
+      if(['3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))verifySubscriptionUi(file.content);
+      if(['3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))await verifyConversationActionsWorkbench(file.content,['chatgpt-codex/']);
+      if(['3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version)){verifyMaxMode(file.content);await verifySubagentLifecycle(file.content,['chatgpt-codex/']);}
       await verifyWorkbenchRouting(file.content, build.version);
+      if(['3.20.17','3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))await verifySubagentRegistration(file.content);
       console.log('Native workbench SSH routing and workspace resources: passed');
     }
     if (!file.path.includes('cursor-agent-exec') && !file.path.includes('cursor-local-agent-runtime')) continue;
-    const start = file.content.indexOf('function(e,t,n,r,o,s=!1,i){const a=function(e){');
-    assert.ok(start >= 0, 'Normalizer function found');
-    const end = file.content.indexOf(file.path.includes('cursor-agent-exec') ? '}(c,t,n,r,o,null!=s&&s,a)' : '}(u,t,n,r,o,null!=s&&s,a)', start);
+    if(['3.20.17','3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version))await verifySubagentModels(file.content);
+    if(['3.20.21','3.20.23','3.21.1','3.21.9','3.21.12'].includes(build.version)){verifyConversationActionsRuntime(file.content);verifySubagentSettings(file.content);verifyContextBudget(file.content,{id:'chatgpt-codex/test',capabilities:{context_length:272000}});}
+    // 3.21.1 rotated these minified locals; their positions are what matters.
+    const header = file.content.match(/function\(e,t,[\w$]+,[\w$]+,[\w$]+,[\w$]+=!1,i\)\{const a=function\(e\)\{/);
+    assert.ok(header, 'Normalizer function found');
+    const start = header.index;
+    const end = file.content.slice(start).search(/\}\([\w$]+,t,[\w$]+,[\w$]+,[\w$]+,null!=[\w$]+&&[\w$]+,a\)/) + start;
     assert.ok(end > start, 'Normalizer function end found');
     const normalize = new Function('return (' + file.content.slice(start, end + 1) + ')')();
     for (const effort of ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']) {

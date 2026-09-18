@@ -5,6 +5,11 @@ The format follows Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Included reviewed patch definitions for Cursor 3.20.21, 3.20.23, 3.21.1, 3.21.9 and 3.21.12, with subagent registration, Explore settings, context and MAX selection, transcript refresh and queued follow-ups.
+- Copied model tooltip and context-option helpers into the installed macOS bridge runtime.
+
 ### Fixed
 
 - Enabled installation in Cursor 3.20.17 on macOS Apple Silicon with verified Mac hashes and Apple code signing that preserves hardened runtime and entitlements.

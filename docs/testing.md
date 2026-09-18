@@ -8,12 +8,12 @@ The minimum supported OS is macOS 26; live application checks were performed on 
 Codex CLI 0.154.0 was signed into ChatGPT.
 
 [The 3.20.17 metadata](../src/supported-build-3.20.17.json) records six hashes captured from the original, signature-verified Mac application.
-The 3.20.11 and 3.20.7 metadata describes Windows bundles and is rejected on macOS.
+The 3.20.11 and 3.20.7 metadata, and the later 3.20.21 through 3.21.12 files, describe Windows bundles and are rejected on macOS.
 A matching version label alone is insufficient to establish compatibility.
 
 ## Current checks
 
-All 42 local tests passed, covering authentication, request normalization, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All local tests passed, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 Native build verification passed for both workbenches, both runtime parameter normalizers, SSH resource/cancellation forwarding, startup code and the workbench checksum.
 
 Both links installed directly in `/Applications/Cursor.app`, GPT first and Claude second, with an existing Apple signing identity.
@@ -33,6 +33,23 @@ Both restoration steps passed strict signature verification and native loading.
 
 GPT-5.6 Luna completed a native IDE file edit and read-back in a disposable local folder.
 The file contained exactly `GPT_NATIVE_OK` followed by a newline.
+
+A detached launcher owns the complete stop/start sequence on macOS. Lifecycle tests cover cold startup and replacement of an existing fixture worker after the launching process exits, plus startup and launcher failure reporting. These checks use temporary workers, not account credentials or model requests.
+
+## Later Cursor patch definitions
+
+The macOS installer still only accepts Cursor 3.20.17.
+The following later versions have reviewed patch definitions and Windows hash files from upstream. They cannot be installed until `scripts/capture-hashes.mjs` records a matching original Mac app:
+
+| Cursor | Commit | Patch file |
+| --- | --- | --- |
+| 3.20.21 | `f09fca384ceca23f7bf21f9c23655b162641d740` | [patches-3.20.21.mjs](../src/patches-3.20.21.mjs) |
+| 3.20.23 | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` | [patches-3.20.23.mjs](../src/patches-3.20.23.mjs) |
+| 3.21.1 | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` | [patches-3.21.1.mjs](../src/patches-3.21.1.mjs) |
+| 3.21.9 | `9998796a6096ce83d83a9332bfe7473b985db750` | [patches-3.21.9.mjs](../src/patches-3.21.9.mjs) |
+| 3.21.12 | `05ddb9e824590e2c1db6bd2548dd71bf67ac9d20` | [patches-3.21.12.mjs](../src/patches-3.21.12.mjs) |
+
+Those later files include Explore model forwarding, native tooltips, context and MAX budgets, subagent lifecycle and transcript refresh, queued follow-ups and Plan-to-Build message preservation. 3.21.1 and later also re-derive rotated workbench and runtime symbols. Unit tests cover those helpers; they do not install a later Mac Cursor build.
 
 ## Repeatable checks
 
@@ -66,9 +83,9 @@ The six resource backups do not contain the original vendor code signature.
 
 ## Historical upstream results and remaining coverage
 
-Earlier September 10–12 notes were inherited from the Windows implementation.
-They described bridge tool calls, local and SSH file edits, image/PDF input and parameter forwarding.
-They do not establish macOS installer, GUI, authentication renewal or SSH coverage.
+Earlier September 10–18 notes were inherited from the Windows implementation.
+They described later Cursor builds, bridge tool calls, local and SSH file edits, image/PDF input, Explore settings, context and MAX mode, subagent lifecycle and queued follow-ups.
+They do not establish macOS installer, GUI, authentication renewal or SSH coverage for those later builds.
 The preceding test history remains in Git.
 
 Fresh macOS SSH file edits, live subagents, cancellation, fresh sign-in/renewal and other account layouts remain unverified.

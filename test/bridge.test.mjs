@@ -1,3 +1,4 @@
+import {maxModeVariant} from '../src/max-mode.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +13,7 @@ process.env.CODEX_HOME = path.join(state, 'codex');
 fs.mkdirSync(process.env.CODEX_HOME);
 fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({key:'synthetic-test-key'}));
 fs.writeFileSync(path.join(process.env.CODEX_HOME, 'auth.json'), JSON.stringify({tokens:{access_token:'synthetic-token', account_id:'synthetic-account'}}));
-const {mergeCatalog, pickerModel, normalizeRequest, handle, readModels, mapUpstreamError, fetchUsage} = await import('../src/bridge.mjs');
+const {mergeCatalog, providerModel, pickerModel, normalizeRequest, handle, readModels, mapUpstreamError, fetchUsage} = await import('../src/bridge.mjs');
 const model = {slug:'test-model', display_name:'Test <model>', description:'Synthetic fixture',
   visibility:'list', context_window:1000, input_modalities:['text'], default_reasoning_level:'medium',
   supported_reasoning_levels:[{effort:'low'}, {effort:'medium'}, {effort:'high'}, {effort:'xhigh'}, {effort:'max'}],
@@ -146,4 +147,77 @@ test('image and PDF inputs retain their original bytes and conversation position
  assert.deepEqual(request.input,snapshot);assert.deepEqual(input,snapshot);
  assert.equal(pickerModel(visual).supportsImages,true);
  assert.equal(pickerModel(model).supportsImages,false);
+});
+
+test('each picker variant describes its selected effort and context',()=>{
+ for(const v of pickerModel(model).variants){
+  const effort=v.parameterValues.find(p=>p.id==='reasoning').value;
+  const text=v.tooltipData.markdownContent;
+  assert.match(text,/1k context window/);
+  assert.ok(text.includes('*Version: '+(effort==='xhigh'?'very high':effort)+' effort'));
+  assert.equal(text.includes(', fast*'),v.parameterValues.find(p=>p.id==='fast').value==='true');
+ }
+});
+
+test('MAX expands to the declared subscription window and preserves effort and Fast',()=>{
+ const catalog={...model,context_window:272000,max_context_window:872000,supports_experimental_context:false};
+ const picker=pickerModel(catalog);
+ assert.equal(picker.supportsMaxMode,true);
+ assert.deepEqual(picker.parameterDefinitions.find(p=>p.id==='context').parameterType.enumParameter.values.map(v=>v.value),['200000','272000']);
+ assert.equal(picker.variants.filter(v=>v.isDefaultMaxConfig).length,1);
+ for(const variant of picker.variants)for(const maxMode of [false,true]){
+  const selected=maxModeVariant(picker,variant.parameterValues,maxMode);
+  assert.equal(selected.parameterValues.find(p=>p.id==='context').value,maxMode?'272000':'200000');
+  for(const p of variant.parameterValues.filter(p=>p.id!=='context'))assert.ok(selected.parameterValues.some(q=>q.id===p.id&&q.value===p.value));
+ }
+ assert.equal(providerModel(catalog).capabilities.context_length,272000);
+ assert.equal(pickerModel({...model,context_window:128000}).supportsMaxMode,false);
+ assert.throws(()=>pickerModel({...model,context_window:undefined}),/valid context/);
+});
+test('context and MAX controls stay local while supported request parameters reach OpenAI',()=>{
+ const request=normalizeRequest({model:'chatgpt-codex/test-model',input:[],reasoning:{effort:'high'},service_tier:'priority',maxMode:true,context:272000},[model]);
+ assert.equal(request.reasoning.effort,'high');assert.equal(request.service_tier,'priority');
+ assert.equal('maxMode' in request,false);assert.equal('context' in request,false);
+ assert.deepEqual(providerModel({...model,context_window:272000}).api_types,['openai_responses']);
+});
+
+test('disconnect cancels the active upstream HTTP stream without another model request', {timeout:5000}, async () => {
+  fs.writeFileSync(path.join(process.env.CODEX_HOME, 'models_cache.json'), JSON.stringify({models:[model]}));
+  let upstreamClosed, calls=0;
+  const closed=new Promise(resolve=>upstreamClosed=resolve);
+  const upstream=http.createServer((_req,res)=>{
+    calls++;res.on('close',upstreamClosed);
+    res.writeHead(200,{'Content-Type':'text/event-stream'});res.write('data: {"type":"response.created"}\n\n');
+  });
+  const server=http.createServer(handle);
+  await Promise.all([new Promise(r=>upstream.listen(0,'127.0.0.1',r)),new Promise(r=>server.listen(0,'127.0.0.1',r))]);
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=(url,options)=>{
+    assert.ok(String(url).startsWith('https://chatgpt.com/'));
+    return originalFetch('http://127.0.0.1:'+upstream.address().port,options);
+  };
+  let client;
+  try {
+    await new Promise((resolve,reject)=>{
+      client=http.request({host:'127.0.0.1',port:server.address().port,path:'/v1/responses',method:'POST',
+        headers:{Authorization:'Bearer synthetic-test-key','Content-Type':'application/json'}},res=>{
+          assert.equal(res.statusCode,200);res.once('data',()=>{res.destroy();client.destroy();resolve();});
+        });
+      client.on('error',reject);client.end(JSON.stringify({model:'chatgpt-codex/test-model',input:'Hello'}));
+    });
+    await closed;assert.equal(calls,1);
+  } finally {
+    client?.destroy();globalThis.fetch=originalFetch;
+    server.closeAllConnections();upstream.closeAllConnections();
+    await Promise.all([new Promise(r=>server.close(r)),new Promise(r=>upstream.close(r))]);
+  }
+});
+
+test('context display separates standard and extended windows without shrinking provider capacity',()=>{
+ for(const capacity of [128000,200000,272000,1000000]){
+  const entry={...model,context_window:capacity},picker=pickerModel(entry);
+  assert.equal(picker.contextTokenLimit,Math.min(200000,capacity));
+  assert.equal(picker.contextTokenLimitForMaxMode,capacity);
+  assert.equal(providerModel(entry).capabilities.context_length,capacity);
+ }
 });

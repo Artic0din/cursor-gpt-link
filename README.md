@@ -20,10 +20,15 @@ This release targets the reviewed macOS builds listed below. It is not a general
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
 Only Cursor 3.20.17 has verified macOS arm64 hashes in this release.
+Patch definitions for 3.20.21, 3.20.23, 3.21.1, 3.21.9 and 3.21.12 are included so a matching original Mac app can be captured with `scripts/capture-hashes.mjs`. Until those hashes are recorded, those versions are rejected.
 Use a local workspace with the **This Mac** environment; cloud agents cannot reach these local bridges and are unsupported.
-The retained 3.20.11 and 3.20.7 metadata describes historical Windows builds and is rejected on macOS.
+The retained 3.20.11, 3.20.7 and later Windows metadata describes historical upstream builds and is rejected on macOS.
 The installer checks the exact version, commit and all six original-file hashes before writing.
 See [testing notes](docs/testing.md) for current macOS results and separately labelled upstream history.
+
+On Cursor 3.20.17, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration, and empty optional subagent model selections are treated as inherited. Those repairs passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation.
+
+Later patch definitions also forward **Explore Subagent Model** selections, match native model tooltips, connect context and MAX selection to the runtime budget, cancel active subagents with the parent chat, refresh subagent transcripts, and forward queued follow-ups when starting Build. See [Context and MAX mode](docs/model-modes.md). Those features are present in the 3.20.21 and later patch files; they are not installable on macOS until that build's Mac hashes are captured.
 
 ## What it adds
 
@@ -164,7 +169,7 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 
 * Live macOS SSH responses and file edits remain unverified; both workbench routing methods have synthetic coverage.
 * Only the listed macOS 26+ (Apple Silicon) client build is supported. Windows and Linux clients and cloud agents are unsupported.
-* Older Cursor versions retain historical Windows metadata and cannot be installed on macOS until their Mac bundles are separately verified.
+* Later Cursor versions retain patch definitions and historical Windows metadata and cannot be installed on macOS until their Mac bundles are separately verified.
 * Native IDE tool calls and file edits passed on macOS. Agents Window, approvals and cancellation still need separate live checks.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.
 * The bridge uses Codex's local model cache. After switching accounts, open Codex to refresh its cache and reload the Cursor window. A stale cache may temporarily show models the new account cannot use.

@@ -1,3 +1,5 @@
+import {contextSizes,contextDefinition,contextLabel} from './context-options.mjs';
+import {modelTooltip} from './model-tooltip.mjs';
 import http from 'node:http';
 import {openaiIcon} from './openai-icon.mjs';
 import fs from 'node:fs';
@@ -53,33 +55,39 @@ export function supportsFast(model) {
 export function pickerModel(m) {
   const labels={none:'None',minimal:'Minimal',low:'Low',medium:'Medium',high:'High',xhigh:'Very high',max:'Max',ultra:'Ultra'};
   const fastAvailable=supportsFast(m);
+  const contexts=contextSizes(m),standardContext=contexts[0],fullContext=contexts.at(-1);
   const fastTooltip='Request priority processing. Fast can consume more of your ChatGPT allowance. Speed and usage depend on the model and your account. The service returned standard processing in our tests, so this switch does not guarantee faster responses. [Details](https://learn.chatgpt.com/docs/agent-configuration/speed)';
   return {
     name: prefix + m.slug, serverModelName: prefix + m.slug,
     clientDisplayName: m.display_name,
     inputboxShortModelName: m.display_name,
     defaultOn: true, supportsAgent: true, supportsImages: m.input_modalities?.includes('image') || false,
-    supportsThinking: true, supportsNonMaxMode: true, supportsMaxMode: false,
-    supportsPlanMode: true, supportsAutoContext: true, contextTokenLimit: m.context_window,
-    autoContextMaxTokens: m.context_window, namedModelSectionIndex: 0,
+    supportsThinking: true, supportsNonMaxMode: true, supportsMaxMode: contexts.length>1,
+    supportsPlanMode: true, supportsAutoContext: true, contextTokenLimit: standardContext, contextTokenLimitForMaxMode: fullContext,
+    autoContextMaxTokens: fullContext, namedModelSectionIndex: 0,
     vendorName: 'openai', vendor:{id:2,displayName:'OpenAI'}, modelPickerBadges:[], cloudAgentEffortModes:[], tagline: 'ChatGPT subscription, local connection',
-    tooltipData:{primaryText:'',secondaryText:'',secondaryWarningText:false,icon:'',tertiaryText:'',tertiaryTextUrl:'',markdownContent:m.description+'\n\nChatGPT subscription, '+m.context_window+' tokens of context'},
-    parameterDefinitions: [{id: 'reasoning', name: 'Reasoning', parameterType: {enumParameter: {
+    tooltipData:modelTooltip(m.display_name,m.description,standardContext,m.default_reasoning_level),
+    parameterDefinitions: [contextDefinition(contexts),{id: 'reasoning', name: 'Reasoning', parameterType: {enumParameter: {
       values: m.supported_reasoning_levels.map(v => ({value: v.effort, displayName: labels[v.effort]||v.effort, markdownTooltip: v.description,modelPickerBadges:[]}))
     }},isCycleableByHotkey:true},...(fastAvailable?[{
       id:'fast',name:'Fast',markdownTooltip:fastTooltip,
       parameterType:{booleanParameter:{values:[{value:'false'},{value:'true',displayName:'Fast',increasesModelCost:true}]}},
       isCycleableByHotkey:true
     }]:[])],
-    variants: m.supported_reasoning_levels.flatMap(v => (fastAvailable?[false,true]:[false]).map(fast=>({
-      parameterValues: [{id: 'reasoning', value: v.effort},...(fastAvailable?[{id:'fast',value:String(fast)}]:[])],
-      displayName: openaiIcon + escapeHtml(m.display_name) + ' <span style="color: var(--cursor-text-tertiary);">'+escapeHtml(labels[v.effort]||v.effort)+(fast?' Fast':'')+'</span>',
-      displayNameOutsidePicker:m.display_name+' '+(labels[v.effort]||v.effort)+(fast?' Fast':''),
-      variantStringRepresentation:prefix+m.slug+'[reasoning='+v.effort+(fastAvailable?',fast='+fast:'')+']',isMaxMode: false,
-      tooltipData:{primaryText:'',secondaryText:'',secondaryWarningText:false,icon:'',tertiaryText:'',tertiaryTextUrl:'',markdownContent:m.description+'\n\nReasoning: '+(labels[v.effort]||v.effort)+(fast?'\n\n'+fastTooltip:'')},
-      isDefaultNonMaxConfig: v.effort === m.default_reasoning_level && !fast}))),
+    variants: m.supported_reasoning_levels.flatMap(v => (fastAvailable?[false,true]:[false]).flatMap(fast=>contexts.map(context=>({
+      parameterValues: [{id: 'reasoning', value: v.effort},...(fastAvailable?[{id:'fast',value:String(fast)}]:[]),{id:'context',value:String(context)}],
+      displayName: openaiIcon + escapeHtml(m.display_name) + ' <span style="color: var(--cursor-text-tertiary);">'+escapeHtml(labels[v.effort]||v.effort)+(fast?' Fast':'')+(context>standardContext?' '+contextLabel(context):'')+'</span>',
+      displayNameOutsidePicker:m.display_name+' '+(labels[v.effort]||v.effort)+(fast?' Fast':'')+(context>standardContext?' '+contextLabel(context):''),
+      variantStringRepresentation:prefix+m.slug+'[reasoning='+v.effort+(fastAvailable?',fast='+fast:'')+',context='+context+']',isMaxMode: context>standardContext,
+      tooltipData:modelTooltip(m.display_name,m.description,context,v.effort,fast),
+      isDefaultNonMaxConfig: v.effort === m.default_reasoning_level && !fast && context===standardContext,
+      isDefaultMaxConfig:v.effort === m.default_reasoning_level && !fast && context>standardContext})))),
     legacySlugs: [], idAliases: []
   };
+}
+export function providerModel(m) {
+  return {id:prefix+m.slug,object:'model',owned_by:'openai',api_types:['openai_responses'],
+    capabilities:{context_length:contextSizes(m).at(-1),supports_vision:m.input_modalities?.includes('image')||false,supports_reasoning:true}};
 }
 export function pickerModels() { return readModels().map(pickerModel); }
 
@@ -220,7 +228,7 @@ export async function handle(req, res) {
       try { return json(res,200,await fetchUsage()); }
       catch (error) { return json(res,502,{error:{message:error.message||'Usage data unavailable.'}}); }
     }
-    if (req.method === 'GET' && req.url === '/v1/models') return json(res,200,{object:'list',data:readModels().map(m=>({id:prefix+m.slug,object:'model',owned_by:'openai',context_window:m.context_window}))});
+    if (req.method === 'GET' && req.url === '/v1/models') return json(res,200,{object:'list',data:readModels().map(providerModel)});
     if (req.method !== 'POST' || req.url !== '/v1/responses') return json(res,404,{error:{message:'Route not supported'}});
     const request = normalizeRequest(await readBody(req));
     const abort = new AbortController();

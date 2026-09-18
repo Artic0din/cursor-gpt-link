@@ -74,7 +74,7 @@ test('restore retains recovery state until signing succeeds', t => {
   assert.equal(fs.readFileSync(pending[0].path, 'utf8'), 'original 0');
 });
 
-test('recorded app permissions stay private until restoration finishes', {skip:process.platform==='win32'}, t=>{
+test('recorded app permissions stay private until restoration finishes', {skip:process.platform!=='darwin'}, t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cursor-mode-test-'));
   t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
   const app=path.join(dir,'Cursor.app'),root=path.join(app,'Contents/Resources/app');
