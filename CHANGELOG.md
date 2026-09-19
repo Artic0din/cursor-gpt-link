@@ -12,6 +12,7 @@ The format follows Keep a Changelog.
 
 ### Fixed
 
+- Filtered Explore model IDs by the ChatGPT prefix before adding them to the local catalog.
 - Restored an older patched app from its existing manifest without requiring that Cursor version to still be an install target.
 - Kept restore state until signing succeeds and required removal of a companion Claude patch before restoring ChatGPT.
 - Rejected incomplete hash captures and fixed CLI invocation through symlinks, imports with unrelated arguments and bridge restart after the host exits.

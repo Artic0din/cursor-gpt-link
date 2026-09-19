@@ -7,7 +7,7 @@ import {requireSubscriptionPrefix} from './subscription-prefix.mjs';
 export function selectedModelIds(existing, overrides, parentModelId, prefix) {
   if(!parentModelId?.startsWith(prefix))return existing;
   const selected=(overrides??[]).filter(o=>o.subagentType==='explore'&&o.selection?.case==='model')
-    .map(o=>o.selection.value?.modelId).filter(id=>typeof id==='string'&&id.trim()&&id!=='default');
+    .map(o=>o.selection.value?.modelId).filter(id=>typeof id==='string'&&id.trim()&&id!=='default'&&id.startsWith(prefix));
   return [...new Set([...existing,...selected])];
 }
 export function configureTaskProps(input, props, prefix) {

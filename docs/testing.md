@@ -33,7 +33,7 @@ CI runs on macOS 26 with Node.js 22, 24 and 26; those runners do not contain a r
 
 For an original supported app, run `node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"`.
 It validates hashes, generates candidates, checks syntax and invokes native routing and parameter normalization without modifying Cursor.
-For 3.21.12 on a Mac, capture original files with `scripts/capture-hashes.mjs`, review the complete metadata and patch anchors, then run build verification.
+For 3.21.12 on a Mac, capture original files with `scripts/capture-hashes.mjs`, copy the captured JSON into `src/supported-build-3.21.12.json` with `darwin`/`arm64` metadata, review the complete metadata and patch anchors, then run build verification.
 Capture rejects missing files, invalid signatures and executables without arm64 support.
 
 With the bridge running, `npm run test:attachments` makes real image and PDF requests and consumes subscription usage.

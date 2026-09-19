@@ -9,7 +9,7 @@ const selection={subagentType:'explore',selection:{case:'model',value:{modelId:c
 test('Explore model selection is available locally without changing Default, Inherit or Disabled',()=>{
  const original=['native'];
  assert.deepEqual(selectedModelIds(original,[selection],parent,GPT_PREFIX),['native',child]);
- assert.deepEqual(selectedModelIds(original,[{...selection,selection:{case:'model',value:{modelId:'another-provider/model'}}}],parent,GPT_PREFIX),['native','another-provider/model']);
+ assert.deepEqual(selectedModelIds(original,[{...selection,selection:{case:'model',value:{modelId:'another-provider/model'}}}],parent,GPT_PREFIX),original);
  for(const mode of ['default','inherit','disabled'])assert.deepEqual(selectedModelIds(original,[{selection:{case:mode}}],parent,GPT_PREFIX),original);
  assert.strictEqual(selectedModelIds(original,[selection],'ordinary',GPT_PREFIX),original);
  assert.deepEqual(original,['native']);
@@ -39,6 +39,7 @@ test('serialized Explore helpers do not close over Node imports',()=>{
   const source=fn.toString();
   assert.equal(source.includes('requireSubscriptionPrefix'),false,fn.name);
   assert.equal(source.includes('GPT_PREFIX'),false,fn.name);
+  assert.equal(source.includes('CLAUDE_PREFIX'),false,fn.name);
   assert.equal(source.includes('import.meta'),false,fn.name);
  }
 });
