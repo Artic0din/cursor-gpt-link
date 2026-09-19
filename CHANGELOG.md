@@ -13,6 +13,7 @@ The format follows Keep a Changelog.
 
 ### Fixed
 
+- Kept ChatGPT and Claude subscription models on This Mac's local runtime when the Agents Window target is This Mac (Remote Control), instead of sending those IDs through Cursor's cloud create RPC. Cloud and Remote Machine targets are unchanged.
 - Routed ChatGPT turns through the local bridge in Cursor's shared Agent Host runtime, including resumed and summarized conversations, while retaining other models' existing execution strategy.
 - Registered Cursor's native execution provider during the shared Agent Host activation while retaining its context, dependencies and cleanup ownership.
 - Reported unsupported independent Agent Host modes immediately for subscription requests, without starting a second runtime or changing ordinary model routes.
