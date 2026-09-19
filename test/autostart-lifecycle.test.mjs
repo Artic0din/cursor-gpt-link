@@ -8,7 +8,7 @@ import {once} from 'node:events';
 import {buildAutostart} from '../src/autostart.mjs';
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const alive=pid=>{try{process.kill(pid,0);return true;}catch{return false;}};
-for(const seeded of [false,true]) test('autostart survives host exit: '+(seeded?'replace worker':'cold start'), {skip:!['win32','darwin'].includes(process.platform),timeout:30000}, async()=>{
+for(const seeded of [false,true]) test('autostart survives host exit: '+(seeded?'replace worker':'cold start'), {skip:process.platform!=='darwin',timeout:30000}, async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bridge-autostart-'));
   const worker=path.join(dir,'worker with spaces.mjs'), pidFile=path.join(dir,'pid.txt');
   fs.writeFileSync(worker,'import fs from "node:fs";fs.writeFileSync('+JSON.stringify(pidFile)+',String(process.pid));setTimeout(()=>process.exit(0),25000);');
@@ -16,13 +16,13 @@ for(const seeded of [false,true]) test('autostart survives host exit: '+(seeded?
   try {
     unrelated=spawn(process.execPath,['-e','setTimeout(()=>{},25000)'],{stdio:'ignore'});
     if(seeded){
-      first=spawn(process.execPath,[worker],{windowsHide:true,stdio:'ignore'});
+      first=spawn(process.execPath,[worker],{stdio:'ignore'});
       for(let i=0;i<100&&!fs.existsSync(pidFile);i++)await delay(50);
       assert.ok(fs.existsSync(pidFile),'original worker started');
     }
     const hostPath=path.join(dir,'host.mjs');
     fs.writeFileSync(hostPath,'await '+buildAutostart({nodePath:process.execPath,bridgePath:worker,stateDir:dir})+'\nprocess.exit(0);');
-    host=spawn(process.execPath,[hostPath],{windowsHide:true,stdio:'ignore'});
+    host=spawn(process.execPath,[hostPath],{stdio:'ignore'});
     const [code]=await once(host,'exit');
     assert.equal(code,0);
     let replacement;

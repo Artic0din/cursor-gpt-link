@@ -9,7 +9,7 @@ import {buildPatches} from './src/patches.mjs';
 import {supportedBuild} from './src/supported-builds.mjs';
 import {installFiles, restoreFiles, installationRoot, hash} from './src/installation.mjs';
 import {stateDir, configPath, config} from './src/config.mjs';
-import {assertSupportedMac, signingIdentity, requireClosedCursor, requireWritableApp, verifyMacSignature, signMacApp} from './src/macos.mjs';
+import {assertSupportedMac, supportedMacHost, signingIdentity, requireClosedCursor, requireWritableApp, verifyMacSignature, signMacApp} from './src/macos.mjs';
 export {macosMajorVersion, osMinimumMajor, machineArch, appBundlePath} from './src/macos.mjs';
 
 const sourceDir = path.dirname(fileURLToPath(import.meta.url));
@@ -117,7 +117,7 @@ Close Cursor before install or restore. See README.md for requirements.`);
     if (manifest.claudeManifest) throw new Error('Restore the Claude link first, then restore ChatGPT.');
     const identity = signingIdentity(config.signingIdentity);
     const root=installationRoot(manifest);
-    assertSupportedMac(supportedBuild(root));
+    assertSupportedMac(supportedMacHost);
     requireWritableApp(root);
     restoreFiles(manifestPath, () => signMacApp(root, identity));
     console.log('ChatGPT patch removed; Cursor signature and native loading verified.');
@@ -160,7 +160,7 @@ Close Cursor before install or restore. See README.md for requirements.`);
   }
   const runtime = path.join(stateDir, 'runtime');
   fs.mkdirSync(runtime, {recursive:true});
-  for (const name of ['bridge.mjs', 'config.mjs', 'openai-icon.mjs']) fs.copyFileSync(path.join(sourceDir, 'src', name), path.join(runtime, name));
+  for (const name of ['bridge.mjs', 'config.mjs', 'openai-icon.mjs', 'model-tooltip.mjs', 'context-options.mjs']) fs.copyFileSync(path.join(sourceDir, 'src', name), path.join(runtime, name));
   installFiles(pending, {backupDir, manifestPath, version:build.version, commit:build.commit, root, appMode});
   console.log('Signing Cursor and checking native loading...');
   signMacApp(root, identity);

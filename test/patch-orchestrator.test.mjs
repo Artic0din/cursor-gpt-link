@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {replaceOnce, wrapRuntime} from '../src/patch-orchestrator.mjs';
+import {CURSOR_VERSION, workbench} from '../src/patch-symbols.mjs';
+import {maxModeVariant} from '../src/max-mode.mjs';
+
+test('the patch table has one row for the recognized Cursor version', () => {
+  assert.deepEqual(Object.keys(workbench), [CURSOR_VERSION]);
+  assert.ok(workbench[CURSOR_VERSION].desktop);
+  assert.ok(workbench[CURSOR_VERSION].glass);
+  assert.equal(workbench[CURSOR_VERSION].commit, '05ddb9e824590e2c1db6bd2548dd71bf67ac9d20');
+});
+
+test('wrapRuntime reads the minified parameter list and fails closed without an anchor', () => {
+  const source = '}(n);if(void 0===a)return;if(void 0!==i&&"openai_compatible"===x)';
+  const patched = wrapRuntime(source);
+  assert.match(patched, /t\.startsWith\("chatgpt-codex\/"\)/);
+  assert.match(patched, /n\?\.find\(p=>p\.id==="reasoning"\)/);
+  assert.equal(wrapRuntime(patched), patched);
+  assert.throws(() => wrapRuntime('no-anchor'), /Reasoning effort anchor missing/);
+});
+
+test('replaceOnce refuses missing or repeated anchors', () => {
+  assert.equal(replaceOnce('ab', 'a', 'x'), 'xb');
+  assert.throws(() => replaceOnce('aa', 'a', 'x'), /not unique/);
+  assert.throws(() => replaceOnce('b', 'a', 'x'), /not unique/);
+});
+
+test('serialized max-mode helper does not close over Node imports', () => {
+  const source = maxModeVariant.toString();
+  assert.equal(source.includes('requireSubscriptionPrefix'), false);
+  assert.equal(source.includes('GPT_PREFIX'), false);
+});

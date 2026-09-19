@@ -1,38 +1,25 @@
 # Testing and compatibility
 
-## Verified macOS build
+## Target macOS build
 
-The September 15, 2026 checks used macOS 27.0 on Apple Silicon, Node.js 25.2.1 and Cursor 3.20.17.
-The exact Cursor commit is `0c32194e3fb5ffaced9fb36430b860ec301e1fc0`.
-The minimum supported OS is macOS 26; live application checks were performed on macOS 27.
-Codex CLI 0.154.0 was signed into ChatGPT.
-
-[The 3.20.17 metadata](../src/supported-build-3.20.17.json) records six hashes captured from the original, signature-verified Mac application.
-The 3.20.11 and 3.20.7 metadata describes Windows bundles and is rejected on macOS.
-A matching version label alone is insufficient to establish compatibility.
+This tree recognizes Cursor **3.21.12** only (`05ddb9e824590e2c1db6bd2548dd71bf67ac9d20`).
+Installation stays fail-closed until `scripts/capture-hashes.mjs` records darwin/arm64 hashes from an original, signature-verified Mac app.
+[The 3.21.12 metadata](../src/supported-build-3.21.12.json) is still Windows upstream data and is rejected on macOS.
+Older Cursor versions are not install targets. Restore of an already patched app uses the existing installation manifest rather than that version's hash file.
+The minimum supported OS is macOS 26.
 
 ## Current checks
 
-All 42 local tests passed, covering authentication, request normalization, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
-Native build verification passed for both workbenches, both runtime parameter normalizers, SSH resource/cancellation forwarding, startup code and the workbench checksum.
+All local tests passed, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 
-Both links installed directly in `/Applications/Cursor.app`, GPT first and Claude second, with an existing Apple signing identity.
-Strict signature verification, Electron native loading and both installation manifests passed after combined installation.
-Both bridge workers started automatically with Cursor and appeared in the native model picker.
-Cloud agents are unsupported: use a local workspace and the This Mac environment.
-
-Signing fixtures verify preservation of hardened runtime and entitlements after patching and resource restoration.
+Both links installed directly in `/Applications/Cursor.app` on an earlier Mac build, GPT first and Claude second, with an existing Apple signing identity.
+Signing fixtures still verify preservation of hardened runtime and entitlements after patching and resource restoration.
 The fixture uses a disposable executable and an injected test signer; production requires an available Apple identity and refuses ad-hoc signing.
 The checks also reject a correctly signed Intel-only executable, leave preflight permissions unchanged and restore the recorded app mode only after restoration finishes.
 Interrupted restoration keeps the app private and its recovery manifest available.
 Legacy manifests without an original mode retain current permissions; official reinstallation recovers the vendor defaults.
-No full-app backup is required; six resource backups and recovery manifests are retained.
 
-Combined removal was tested on the real app: GPT refused removal before Claude, Claude restoration preserved GPT, and final GPT restoration recovered all six original resource hashes.
-Both restoration steps passed strict signature verification and native loading.
-
-GPT-5.6 Luna completed a native IDE file edit and read-back in a disposable local folder.
-The file contained exactly `GPT_NATIVE_OK` followed by a newline.
+A detached launcher owns the complete stop/start sequence on macOS. Lifecycle tests cover cold startup and replacement of an existing fixture worker after the launching process exits, plus startup and launcher failure reporting. These checks use temporary workers, not account credentials or model requests.
 
 ## Repeatable checks
 
@@ -46,7 +33,7 @@ CI runs on macOS 26 with Node.js 22, 24 and 26; those runners do not contain a r
 
 For an original supported app, run `node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"`.
 It validates hashes, generates candidates, checks syntax and invokes native routing and parameter normalization without modifying Cursor.
-For a new build, capture its original files with `scripts/capture-hashes.mjs`, review the complete metadata and patch anchors, then run build verification.
+For 3.21.12 on a Mac, capture original files with `scripts/capture-hashes.mjs`, copy the captured JSON into `src/supported-build-3.21.12.json` with `darwin`/`arm64` metadata, review the complete metadata and patch anchors, then run build verification.
 Capture rejects missing files, invalid signatures and executables without arm64 support.
 
 With the bridge running, `npm run test:attachments` makes real image and PDF requests and consumes subscription usage.
@@ -58,17 +45,17 @@ Bridge checks alone do not establish complete Cursor UI coverage.
 2. Restore validates every resource backup before writing and re-signs the app before reporting success.
 3. Retry an interrupted restore while its manifest remains present; unknown file changes stop restoration.
 4. Reinstall official Cursor to recover its vendor signature or a failed signing operation.
-5. Install GPT followed by Claude on the recognized build; stale manifests are archived only after original files or a valid companion installation are verified.
+5. Install GPT followed by Claude on the recognized 3.21.12 Mac build once hashes exist; stale manifests are archived only after original files or a valid companion installation are verified.
 
 Never restore old resources over a newer build or edit hashes to bypass compatibility checks.
-A new Mac build needs original-file capture, anchor review and separate validation.
+A new Mac build needs original-file capture, a new table row and separate validation.
 The six resource backups do not contain the original vendor code signature.
 
 ## Historical upstream results and remaining coverage
 
-Earlier September 10–12 notes were inherited from the Windows implementation.
-They described bridge tool calls, local and SSH file edits, image/PDF input and parameter forwarding.
-They do not establish macOS installer, GUI, authentication renewal or SSH coverage.
+Earlier September 10–18 notes were inherited from the Windows implementation and from the previous 3.20.17 Mac target.
+They described later Cursor builds, bridge tool calls, local and SSH file edits, image/PDF input, Explore settings, context and MAX mode, subagent lifecycle and queued follow-ups.
+They do not establish macOS installer coverage for 3.21.12.
 The preceding test history remains in Git.
 
 Fresh macOS SSH file edits, live subagents, cancellation, fresh sign-in/renewal and other account layouts remain unverified.

@@ -32,6 +32,10 @@ export function macosMajorVersion() {
   return major;
 }
 
+// Restore uses this host snapshot instead of getBuild()/supportedBuild() so an
+// older patched app can still be removed after this tree dropped that version.
+export const supportedMacHost = Object.freeze({platform:'darwin', arch:'arm64', osMinimum:'26.0'});
+
 export function assertSupportedMac(build) {
   const minimum = osMinimumMajor(build);
   if (process.platform !== 'darwin' || machineArch() !== 'arm64' || build.platform !== 'darwin' || build.arch !== 'arm64' || macosMajorVersion() < minimum) {
