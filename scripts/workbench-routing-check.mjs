@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 
-const exploreOverride = {
-  subagentType: 'explore',
-  selection: {case: 'model', value: {modelId: 'selected-explore-model'}},
-  toBinary: () => new Uint8Array([1, 2, 3])
-};
-
 // Exercise the actual patched workbench method with synthetic service objects.
 // This checks argument wiring without distributing the application's bundles.
 export async function exercisePatchedLocalAgent(source, {modelId, authority, nativeSetting, prefix = 'chatgpt-codex/'}) {
+  const exploreOverride = {
+    subagentType: 'explore',
+    selection: {case: 'model', value: {modelId: prefix + 'selected-explore-model'}},
+    toBinary: () => new Uint8Array([1, 2, 3])
+  };
   const name = source.includes('async _subscriptionNativeLocalAgent(') ? '_subscriptionNativeLocalAgent' : 'runLocalAgentInExtensionHost';
   const start = source.indexOf('async ' + name + '(');
   const end = source.indexOf('}runLocalAgentInDedicatedExtensionHost(', start);

@@ -1,4 +1,6 @@
 import {patchConversationActionsWorkbench, patchConversationActionsRuntime} from './conversation-actions.mjs';
+import {patchAgentHostRouting} from './agent-host-routing.mjs';
+import {patchAgentExecRegistration} from './agent-exec-registration.mjs';
 import {patchSubagentLifecycle} from './subagent-lifecycle.mjs';
 import {patchMaxMode} from './max-mode.mjs';
 import {patchSubagentSettingsWorkbench, patchSubagentSettingsRuntime} from './subagent-settings.mjs';
@@ -96,6 +98,7 @@ function patchWorkbenchSurface(source, surfaceName, anchors, features, prefix, v
   source = replaceOnce(source, surface.provider,
     surface.provider + 'if(__isChatgptBridgeModel(' + surface.model + '))return{baseUrl:__chatgptBridgeBase+"/v1",apiKey:__chatgptBridgeKey,customHeaders:{}};');
   source = patchLocalBridgeMode(source, surface);
+  source = patchAgentHostRouting(source);
   source += loginCommand(surface.login);
   source = addUsage(source, surface.usage);
   source = patchRemoteRouting(source, surfaceName, version);
@@ -126,6 +129,7 @@ export function buildVersionPatches({root, cfg, models, nodePath, bridgePath, st
     if (features.model) source = patchSubagentModel(source);
     if (features.settings) source = patchSubagentSettingsRuntime(source, prefix);
     if (features.actions) source = patchConversationActionsRuntime(source, prefix);
+    if (relative === 'extensions/cursor-agent-exec/dist/main.js') source = patchAgentExecRegistration(source);
     pending.push({path: path.join(root, relative), content: source});
   }
   const mainPath = path.join(root, 'out/main.js');

@@ -16,7 +16,7 @@ function fixture(t) {
 
 test('hash capture rejects an incomplete app without printing metadata', t => {
   const dir = fixture(t);
-  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({version:'3.21.12'}));
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({version:'3.21.13'}));
   fs.writeFileSync(path.join(dir, 'product.json'), JSON.stringify({commit:'fixture'}));
   const result = spawnSync(process.execPath, ['scripts/capture-hashes.mjs', dir], {cwd:repo, encoding:'utf8'});
   assert.notEqual(result.status, 0);
