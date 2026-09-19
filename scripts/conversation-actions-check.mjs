@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createSubscriptionActionChannel,subscriptionActionReceiver} from '../src/conversation-actions.mjs';
+import {exercisePatchedLocalAgent} from './workbench-routing-check.mjs';
 
 function classBody(source,start){
   let depth=0,quote;
@@ -55,6 +56,10 @@ export async function verifyConversationActionsWorkbench(source,prefixes){
   assert.match(source,/return this.runLocalAgentInExtensionHost\([^)]*,a\)\}return this.client.run/);
   assert.match(source,/subscriptionPlanPrepends:[\w$]+\.action.case==="executePlanAction"\?[\w$]+\.map\(message=>Array.from\(message.toBinary\(\)\)\)/);
   assert.match(source,/subscriptionActionChannel:[\w$]+\.subscriptionActionChannel,subscriptionPlanPrepends:[\w$]+\.subscriptionPlanPrepends,serializeSubagentStatesAsBlobRefs:/);
+  const forwarded=await exercisePatchedLocalAgent(source,{modelId:prefixes[0]+'test-model',authority:'ssh-remote+test-host',nativeSetting:false,prefix:prefixes[0]});
+  assert.equal(forwarded.name,'_subscriptionNativeLocalAgent');
+  assert.equal(forwarded.request.runOptions.subscriptionActionChannel,'subscription-actions:test');
+  assert.deepEqual(forwarded.request.runOptions.subscriptionPlanPrepends,[[1,2]]);
   console.log('Native action manager: queued delivery, Build forwarding, replay, acknowledgement and Stop passed.');
 }
 

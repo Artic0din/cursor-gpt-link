@@ -9,7 +9,7 @@ export function verifyMaxMode(source) {
  const def=fn.match(/:([\w$]+)\([\w$]+,\{maxMode:/)[1];
  const same=(variant,params)=>variant.parameterValues.length===params.length&&variant.parameterValues.every(p=>params.some(q=>p.id===q.id&&p.value===q.value));
  const dependencies={[eq]:same,[def]:(model,{maxMode})=>model.variants.find(v=>maxMode?v.isDefaultMaxConfig:v.isDefaultNonMaxConfig),
-  __ChatgptMaxModeVariant:maxModeVariant,__ClaudeMaxModeVariant:maxModeVariant};
+  __subscriptionMaxModeVariant:maxModeVariant,__ClaudeMaxModeVariant:maxModeVariant};
  const solve=new Function(...Object.keys(dependencies),'return ('+fn+')')(...Object.values(dependencies));
  const model={name:'chatgpt-codex/fixture',supportsMaxMode:true,supportsNonMaxMode:true,
   variants:['low','high'].flatMap(effort=>[false,true].flatMap(fast=>[200000,1000000].map(context=>({

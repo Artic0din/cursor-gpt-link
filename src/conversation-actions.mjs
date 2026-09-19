@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import {requireSubscriptionPrefix} from './subscription-prefix.mjs';
 
 export function subscriptionActionModel(model, prefixes) {
   return typeof model === 'string' && prefixes.some(prefix => model.startsWith(prefix));
@@ -140,6 +141,7 @@ function registry(source,prefix){
   return found?source.replace(pattern,'var __subscriptionActionPrefixes='+JSON.stringify([...new Set([...JSON.parse(found[1]),prefix])])+';'):undefined;
 }
 export function patchConversationActionsWorkbench(source,surface,prefix){
+  requireSubscriptionPrefix(prefix);
   const combined=registry(source,prefix);if(combined)return combined;
   if(!['desktop','glass'].includes(surface))throw new Error('Unknown workbench surface');
   const local=source.match(/async runLocalAgentInExtensionHost\(([^)]+)\)\{/);
@@ -165,6 +167,7 @@ export function patchConversationActionsWorkbench(source,surface,prefix){
 }
 
 export function patchConversationActionsRuntime(source,prefix){
+  requireSubscriptionPrefix(prefix);
   const combined=registry(source,prefix);if(combined)return combined;
   // The two runtime bundles minify this generator differently and Cursor 3.21.1
   // rotated their local names, so read the symbols out of the match.

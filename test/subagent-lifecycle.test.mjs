@@ -78,6 +78,11 @@ test('repeated completed children do not accumulate parent abort listeners',asyn
   assert.equal(getEventListeners(f.parentAbort.signal,'abort').length,before);
 });
 test('unknown lifecycle versions fail closed',()=>{
+  assert.throws(()=>patchSubagentLifecycle('source','desktop','chatgpt-codex/'),/Subagent lifecycle version is required/);
   assert.throws(()=>patchSubagentLifecycle('source','desktop','chatgpt-codex/','3.99.0'),/Unsupported subagent lifecycle version/);
   assert.throws(()=>patchSubagentLifecycle('source','desktop','chatgpt-codex/','3.20.17'),/Unsupported subagent lifecycle version/);
+  assert.throws(()=>patchSubagentLifecycle('source','desktop','chatgpt-codex/','3.20.21'),/Unsupported subagent lifecycle version/);
+  const injected=[subscriptionComposer,createSubscriptionSubagent,runSubscriptionSubagent,warmSubscriptionTranscript].map(fn=>fn.toString()).join('\n');
+  assert.equal(injected.includes('requireSubscriptionPrefix'),false);
+  assert.equal(injected.includes('GPT_PREFIX'),false);
 });

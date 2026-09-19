@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {remoteRoutingPrelude, remoteAnchors, patchRemoteRouting} from '../src/remote-routing.mjs';
+import {remoteRoutingPrelude, spelledAnchors, patchRemoteRouting} from '../src/remote-routing.mjs';
+import {workbench} from '../src/patch-symbols.mjs';
 
 const isBridgeModel = model => typeof model === 'string' && model.startsWith('chatgpt-codex/');
 const chooseDedicated = new Function('__isChatgptBridgeModel', remoteRoutingPrelude + '\nreturn __useChatgptDedicatedRuntime;')(isBridgeModel);
@@ -14,8 +15,9 @@ test('SSH ChatGPT inference stays local; ordinary and local sessions retain thei
 });
 
 for (const surface of ['desktop', 'glass']) {
+  const row = workbench['3.21.12'][surface];
+  const anchors = spelledAnchors(row);
   test(surface + ': dedicated routing passes workspace resources and cancellation unchanged', async () => {
-    const anchors = remoteAnchors[surface];
     const desktop = surface === 'desktop';
     const branch = desktop
       ? 'await this.runLocalAgentInDedicatedExtensionHost(f,v,c,e.signal):await this.agentExecProviderService.runLocalAgent(f,v,e.signal)'
@@ -23,8 +25,8 @@ for (const surface of ['desktop', 'glass']) {
     const fixture = anchors.activation + '\nasync function route(model,request,callbacks,resources,signal){' +
       (desktop ? 'const g=model,f=request,v=callbacks,c=resources,e={signal};' : 'const p=model,g=request,v=callbacks,l=resources,t={signal};') +
       anchors.selector + branch + ';}';
-    const source = patchRemoteRouting(fixture, surface);
-    const route = new Function('__isChatgptBridgeModel', '__chatgptBridgeBase', 'Gh', 'qp',
+    const source = patchRemoteRouting(fixture, surface, '3.21.12');
+    const route = new Function('__isChatgptBridgeModel', '__chatgptBridgeBase', 'Qh', 'Pp',
       source + '\nreturn route;')(isBridgeModel, 'http://127.0.0.1:43187', () => false, () => false);
     const request = {baseUrl:'http://127.0.0.1:43187/v1'};
     const resources = {remoteWorkspace:'synthetic-ssh-workspace'};
@@ -44,16 +46,23 @@ for (const surface of ['desktop', 'glass']) {
   });
 
   test(surface + ': dedicated extension is available without enabling global local mode', () => {
-    const anchors = remoteAnchors[surface];
-    const source = patchRemoteRouting(anchors.activation + '\nconst selection=' + anchors.selector + '1:0;', surface);
+    const source = patchRemoteRouting(anchors.activation + '\nconst selection=' + anchors.selector + '1:0;', surface, '3.21.12');
     const start = source.indexOf(anchors.enabled);
     assert.ok(start >= 0);
-    const enabled = new Function('__chatgptBridgeBase', anchors.enabled + '\nreturn ' + (surface === 'desktop' ? 'edp' : 'mIg') + ';')('http://127.0.0.1:43187');
+    const name = row.activation.match(/^function ([\w$]+)/)[1];
+    const enabled = new Function('__chatgptBridgeBase', anchors.enabled + '\nreturn ' + name + ';')('http://127.0.0.1:43187');
     assert.equal(enabled(undefined), true);
   });
 }
 
+test('unknown or omitted routing versions fail closed', () => {
+  assert.throws(() => patchRemoteRouting('', 'desktop'), /Unsupported routing version/);
+  assert.throws(() => patchRemoteRouting('', 'desktop', '3.20.17'), /Unsupported Cursor version/);
+  assert.throws(() => patchRemoteRouting('', 'desktop', '3.21.9'), /Unsupported Cursor version/);
+});
+
 test('unknown or repeated remote anchors fail before producing a patch', () => {
-  assert.throws(() => patchRemoteRouting('', 'desktop'), /not unique/);
-  assert.throws(() => patchRemoteRouting(remoteAnchors.desktop.selector.repeat(2), 'desktop'), /not unique/);
+  assert.throws(() => patchRemoteRouting('', 'desktop', '3.21.12'), /not unique/);
+  const anchors = spelledAnchors(workbench['3.21.12'].desktop);
+  assert.throws(() => patchRemoteRouting(anchors.selector.repeat(2), 'desktop', '3.21.12'), /not unique/);
 });

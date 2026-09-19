@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import {ensureChatgptTaskBubble} from '../src/subagent-bubbles.mjs';
+import {ensureChatgptTaskBubble, patchSubagentBubbles} from '../src/subagent-bubbles.mjs';
+import {normalizeChatgptSubagentModel} from '../src/subagent-model.mjs';
 import test from 'node:test';
+const prefix='chatgpt-codex/';
 function fixture() {
  const bubbles=new Map(),created=[];
  const parent={data:{modelConfig:{selectedModels:[{modelId:'chatgpt-codex/gpt-test'}]}}};
@@ -8,7 +10,7 @@ function fixture() {
  const service={loadComposerCapabilities(){},getComposerCapability:()=>toolFormer};
  const request={modelId:'chatgpt-codex/gpt-test',toolCallId:'task-1',subagentType:'explore',prompt:'Inspect the workspace',abortSignal:new AbortController().signal};
  class Params{constructor(values){Object.assign(this,values);}}
- const run=()=>ensureChatgptTaskBubble(service,request,parent,19,Params,3);
+ const run=()=>ensureChatgptTaskBubble(service,request,parent,19,Params,3,prefix);
  return {bubbles,created,parent,toolFormer,service,request,run};
 }
 test('missing ChatGPT Task bubble is created once with the original tool ID and prompt',()=>{
@@ -29,10 +31,18 @@ test('cancelled subagent requests cannot create a Task bubble',()=>{
 });
 test('missing parent or ToolFormer does not signal a successful creation',()=>{
  const f=fixture();f.service.getComposerCapability=()=>undefined;f.run();assert.equal(f.created.length,0);
- ensureChatgptTaskBubble(f.service,f.request,undefined,19,Object,3);assert.equal(f.created.length,0);
+ ensureChatgptTaskBubble(f.service,f.request,undefined,19,Object,3,prefix);assert.equal(f.created.length,0);
 });
-
-import {normalizeChatgptSubagentModel} from '../src/subagent-model.mjs';
+test('unknown bubble versions fail closed',()=>{
+ assert.throws(()=>patchSubagentBubbles('source','desktop'),/Subagent bubble version is required/);
+ assert.throws(()=>patchSubagentBubbles('source','desktop','3.20.17'),/Unsupported subagent bubble version/);
+});
+test('serialized bubble helpers do not close over Node imports',()=>{
+ const source=ensureChatgptTaskBubble.toString();
+ assert.equal(source.includes('requireSubscriptionPrefix'),false);
+ assert.equal(source.includes('GPT_PREFIX'),false);
+ assert.equal(source.includes('import.meta'),false);
+});
 test('blank optional Task models use native inheritance without mutating input',()=>{
  for(const requestedModel of ['', '  ']){
   const input={parentModelId:'chatgpt-codex/test',requestedModel,forceModelId:'policy-model'};

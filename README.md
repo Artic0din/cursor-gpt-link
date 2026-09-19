@@ -2,33 +2,30 @@
 
 An experimental patch that adds models from your local Codex catalog to Cursor's model picker and routes them through your existing ChatGPT sign-in. It uses Cursor's local agent runtime. It does not install an extension.
 
-This release targets the reviewed macOS builds listed below. It is not a general patch for every Cursor version, operating system, subscription, or model. Windows and Linux are not supported.
+This release targets Cursor 3.21.12 on macOS 26+ Apple Silicon. It is not a general patch for every Cursor version, operating system, subscription, or model. Windows and Linux are not supported.
 
 ## Status
 
 | Item | Current status |
 | --- | --- |
-| Cursor | 3.20.17, macOS 26+ (Apple Silicon, arm64) |
-| Latest Cursor commit | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` (3.20.17) |
-| Latest local test date | September 15, 2026 |
+| Cursor | 3.21.12, macOS 26+ (Apple Silicon, arm64) |
+| Latest Cursor commit | `05ddb9e824590e2c1db6bd2548dd71bf67ac9d20` (3.21.12) |
+| Latest local test date | Pending darwin/arm64 hash capture |
 | Node.js used for testing | 25.2.1 |
 | Codex CLI used for testing | 0.154.0 |
 | macOS signing | Hardened runtime, entitlements and native loading checked |
 | Reasoning selection | Forwarding verified in both local runtimes |
-| IDE and Agents Window | Native IDE file edit and read-back passed; Agents Window live testing is pending |
+| IDE and Agents Window | Native IDE file edit and read-back passed on an earlier Mac build; Agents Window live testing is pending |
 | Remote SSH sessions | Routing checked in both bundles; live macOS SSH testing is pending |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
-Only Cursor 3.20.17 has verified macOS arm64 hashes in this release.
-Patch definitions for 3.20.21, 3.20.23, 3.21.1, 3.21.9 and 3.21.12 are included so a matching original Mac app can be captured with `scripts/capture-hashes.mjs`. Until those hashes are recorded, those versions are rejected.
+This fork targets Cursor **3.21.12** only. Installation stays rejected until `scripts/capture-hashes.mjs` records darwin/arm64 hashes from an original Mac app. Older Cursor versions are not supported.
 Use a local workspace with the **This Mac** environment; cloud agents cannot reach these local bridges and are unsupported.
-The retained 3.20.11, 3.20.7 and later Windows metadata describes historical upstream builds and is rejected on macOS.
+The retained Windows `supported-build-3.21.12.json` is historical upstream metadata and is rejected on macOS.
 The installer checks the exact version, commit and all six original-file hashes before writing.
 See [testing notes](docs/testing.md) for current macOS results and separately labelled upstream history.
 
-On Cursor 3.20.17, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration, and empty optional subagent model selections are treated as inherited. Those repairs passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation.
-
-Later patch definitions also forward **Explore Subagent Model** selections, match native model tooltips, connect context and MAX selection to the runtime budget, cancel active subagents with the parent chat, refresh subagent transcripts, and forward queued follow-ups when starting Build. See [Context and MAX mode](docs/model-modes.md). Those features are present in the 3.20.21 and later patch files; they are not installable on macOS until that build's Mac hashes are captured.
+The 3.21.12 pipeline forwards **Explore Subagent Model** selections, matches native model tooltips, connects context and MAX selection to the runtime budget, cancels active subagents with the parent chat, refreshes subagent transcripts, and forwards queued follow-ups when starting Build. See [Context and MAX mode](docs/model-modes.md). Local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration, and empty optional subagent model selections are treated as inherited.
 
 ## What it adds
 
@@ -52,7 +49,7 @@ Do not assume a fixed twofold speed increase or a fixed usage multiplier. Availa
 
 ## Requirements
 
-* macOS 26 or newer on an Apple Silicon (arm64) Mac and one of the exact Cursor builds listed above. The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
+* macOS 26 or newer on an Apple Silicon (arm64) Mac and the exact Cursor 3.21.12 build listed above. The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
 * Node.js 22 or newer on PATH.
 * A Codex executable and a ChatGPT account with access to the requested models.
 * Existing file-based Codex authentication in `auth.json` and a populated `models_cache.json` in the same Codex home.
@@ -169,7 +166,7 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 
 * Live macOS SSH responses and file edits remain unverified; both workbench routing methods have synthetic coverage.
 * Only the listed macOS 26+ (Apple Silicon) client build is supported. Windows and Linux clients and cloud agents are unsupported.
-* Later Cursor versions retain patch definitions and historical Windows metadata and cannot be installed on macOS until their Mac bundles are separately verified.
+* Later Cursor versions are unsupported until this tree gains a new 3.21.12-style table row, Mac hashes and verification.
 * Native IDE tool calls and file edits passed on macOS. Agents Window, approvals and cancellation still need separate live checks.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.
 * The bridge uses Codex's local model cache. After switching accounts, open Codex to refresh its cache and reload the Cursor window. A stale cache may temporarily show models the new account cannot use.

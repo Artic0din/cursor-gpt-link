@@ -1,3 +1,5 @@
+import {requireSubscriptionPrefix} from './subscription-prefix.mjs';
+
 // Shared by both links. A combined install adds its provider prefix once.
 export function subscriptionComposer(service, id, prefixes) {
   const seen = new Set();
@@ -80,16 +82,13 @@ function once(source, before, after) {
 // Minified identifiers per reviewed build: the subagent service used to cancel a
 // tree, and the untracked reader around the transcript conversation map.
 const lifecycleSymbols = {
-  '3.20.21': {desktop:{service:'SZe', untrack:'tr'}, glass:{service:'Cde', untrack:'cs'}},
-  '3.20.23': {desktop:{service:'yZe', untrack:'tr'}, glass:{service:'Tde', untrack:'cs'}},
-  '3.21.1':  {desktop:{service:'hZe', untrack:'Xi'}, glass:{service:'ude', untrack:'Kr'}},
-  '3.21.9':  {desktop:{service:'pZe', untrack:'Xi'}, glass:{service:'lde', untrack:'Qr'}},
   '3.21.12': {desktop:{service:'pZe', untrack:'Xi'}, glass:{service:'lde', untrack:'Jr'}},
 };
 
-export function patchSubagentLifecycle(source, surface, prefix, version='3.20.21') {
+export function patchSubagentLifecycle(source, surface, prefix, version) {
+  if (version == null) throw new Error('Subagent lifecycle version is required');
   if (!['desktop','glass'].includes(surface)) throw new Error('Unknown workbench surface');
-  if (!['chatgpt-codex/','claude-subscription/'].includes(prefix)) throw new Error('Unknown subscription provider');
+  requireSubscriptionPrefix(prefix);
   const registry = /var __subscriptionSubagentPrefixes=(\[[^;]+\]);/;
   const existing = source.match(registry);
   if (existing) {

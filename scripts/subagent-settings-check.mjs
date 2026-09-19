@@ -2,6 +2,17 @@
 // bundled code is read from a local installation and is never redistributed.
 import assert from 'node:assert/strict';
 import {configureTaskProps,selectedParameters,selectedModelIds} from '../src/subagent-settings.mjs';
+import {exercisePatchedLocalAgent} from './workbench-routing-check.mjs';
+
+export async function verifySubagentSettingsWorkbench(source, prefix='chatgpt-codex/') {
+  const selected=await exercisePatchedLocalAgent(source,{modelId:prefix+'test-model',authority:'ssh-remote+test-host',nativeSetting:false,prefix});
+  assert.deepEqual(selected.request.availableModelIds,['selected-explore-model']);
+  assert.deepEqual(selected.request.runOptions.subagentModelOverrides,[selected.override.toBinary()]);
+  const ordinary=await exercisePatchedLocalAgent(source,{modelId:'ordinary-model',authority:'ssh-remote+test-host',nativeSetting:false,prefix});
+  assert.deepEqual(ordinary.request.availableModelIds,[]);
+  assert.deepEqual(ordinary.request.runOptions.subagentModelOverrides,[ordinary.override.toBinary()]);
+}
+
 export function verifySubagentSettings(source) {
  // 3.21.1 rotated the minified locals; the resolver call is what identifies it.
  const match=source.match(/function ([\w$]+)\(e\)\{const t=\(\)=>!1,([\w$]+)=([\w$]+)\(e\),([\w$]+)=null!=\2\?\2:e\.localProvider;/);
@@ -22,15 +33,15 @@ export function verifySubagentSettings(source) {
   const overrides=[{subagentType:'explore',selection:{case:'model',value:{modelId,parameters:selectedParams}}}];
   const base={modelId:parent,localProvider:{kind:'http',endpoints:[]},modelParameters:parentParams,subagentModelOverrides:overrides};
   assert.equal(native(base).subagentModelOverrides.explore.type,'inherit','Original missing-catalog failure reproduced');
-  const input={...base,availableModels:selectedModelIds([],overrides,parent).map(id=>({id}))};
-  const props=configureTaskProps(input,native(input));
+  const input={...base,availableModels:selectedModelIds([],overrides,parent,'chatgpt-codex/').map(id=>({id}))};
+  const props=configureTaskProps(input,native(input),'chatgpt-codex/');
   assert.deepEqual(props.subagentModelOverrides.explore,{type:'model',modelId});
   assert.deepEqual(props.parentModelParameters,parentParams);
-  assert.deepEqual(selectedParameters(props,{subagent_type:{type:{case:'explore'}},userRequestedModelId:modelId},modelId),selectedParams);
+  assert.deepEqual(selectedParameters(props,{subagent_type:{type:{case:'explore'}},userRequestedModelId:modelId},modelId,undefined,'chatgpt-codex/'),selectedParams);
  }
  for(const mode of ['default','inherit','disabled']){
   const input={modelId:parent,localProvider:{kind:'http'},subagentModelOverrides:mode==='default'?[]:[{subagentType:'explore',selection:{case:mode,value:true}}]};
-  const original=native(input),patched=configureTaskProps(input,original);
+  const original=native(input),patched=configureTaskProps(input,original,'chatgpt-codex/');
   assert.deepEqual(patched.subagentModelOverrides,original.subagentModelOverrides);
   assert.equal(patched.subagentModelOverrides.explore.type,mode==='default'?'inherit':mode);
  }
