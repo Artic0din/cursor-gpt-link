@@ -1,6 +1,7 @@
 // Opt-in local verification against an original supported Cursor installation.
 // Bundled application code is read locally and is never included in this repository.
 import {verifySubscriptionUi} from './subscription-ui-check.mjs';
+import {verifyAgentHostRouting} from './agent-host-routing-check.mjs';
 import {verifyConversationActionsWorkbench,verifyConversationActionsRuntime} from './conversation-actions-check.mjs';
 import {verifySubagentLifecycle} from './subagent-lifecycle-check.mjs';
 import {verifyMaxMode,verifyContextBudget} from './max-mode-check.mjs';
@@ -37,6 +38,7 @@ try {
     execFileSync(process.execPath, ['--check', candidate], {stdio:'pipe'});
     console.log('Syntax and unique anchors: ' + path.relative(root, file.path));
     if (file.path.includes('workbench.')) {
+      await verifyAgentHostRouting(file.content);
       verifySubscriptionUi(file.content);
       if (features.actions) await verifyConversationActionsWorkbench(file.content,['chatgpt-codex/']);
       if (features.max) verifyMaxMode(file.content);
