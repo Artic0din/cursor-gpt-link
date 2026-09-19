@@ -2,30 +2,40 @@
 
 An experimental patch that adds models from your local Codex catalog to Cursor's model picker and routes them through your existing ChatGPT sign-in. It uses Cursor's local agent runtime. It does not install an extension.
 
-This release targets Cursor 3.21.12 on macOS 26+ Apple Silicon. It is not a general patch for every Cursor version, operating system, subscription, or model. Windows and Linux are not supported.
+This release targets Cursor 3.21.13 on macOS 26+ Apple Silicon.
+It is not a general patch for every Cursor version, operating system, subscription, or model.
+Windows and Linux are not supported.
 
 ## Status
 
 | Item | Current status |
 | --- | --- |
-| Cursor | 3.21.12, macOS 26+ (Apple Silicon, arm64) |
-| Latest Cursor commit | `05ddb9e824590e2c1db6bd2548dd71bf67ac9d20` (3.21.12) |
-| Latest local test date | Pending darwin/arm64 hash capture |
-| Node.js used for testing | 25.2.1 |
+| Cursor | 3.21.13, macOS 26+ (Apple Silicon, arm64) |
+| Latest Cursor commit | `e44a49c17e334d442e58bbde931d791200f014a0` (3.21.13) |
+| Latest local test date | September 19, 2026; native IDE write/read-back, installation and original Mac hashes verified |
+| Node.js used for testing | 26.8.2 |
 | Codex CLI used for testing | 0.154.0 |
-| macOS signing | Hardened runtime, entitlements and native loading checked |
+| macOS signing | Installed 3.21.13 signature, hardened runtime, entitlements and native loading checked |
+| Bridge startup | Final Cursor restart automatically started both installed bridges; authenticated health checks passed |
 | Reasoning selection | Forwarding verified in both local runtimes |
-| IDE and Agents Window | Native IDE file edit and read-back passed on an earlier Mac build; Agents Window live testing is pending |
+| IDE and Agents Window | Native IDE write/read-back passed on 3.21.13 with a ChatGPT Subscription model; Agents Window live testing is pending |
 | Remote SSH sessions | Routing checked in both bundles; live macOS SSH testing is pending |
+| Agent Host runtime | Shared runtime supported; independent runtime temporarily unsupported |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
-This fork targets Cursor **3.21.12** only. Installation stays rejected until `scripts/capture-hashes.mjs` records darwin/arm64 hashes from an original Mac app. Older Cursor versions are not supported.
+This fork targets Cursor **3.21.13** only.
+The darwin/arm64 hashes were captured from an original signature-verified Mac app.
+Older Cursor versions are not supported.
 Use a local workspace with **This Mac** or **This Mac (Remote Control)**. Cloud and Remote Machine cannot reach these local bridges and remain unsupported.
-The retained Windows `supported-build-3.21.12.json` is historical upstream metadata and is rejected on macOS.
+With Agent Host enabled, subscription models currently require Cursor's shared execution runtime: both `cursor_agent_host_move_exec` and `agent_host_local_loop` must be off.
+Independent runtime modes return a clear unsupported-mode error for subscription requests; their support is pending.
+The patch preserves Cursor's runtime flags and ordinary model routes.
 The installer checks the exact version, commit and all six original-file hashes before writing.
 See [testing notes](docs/testing.md) for current macOS results and separately labelled upstream history.
 
-The 3.21.12 pipeline forwards **Explore Subagent Model** selections, matches native model tooltips, connects context and MAX selection to the runtime budget, cancels active subagents with the parent chat, refreshes subagent transcripts, and forwards queued follow-ups when starting Build. See [Context and MAX mode](docs/model-modes.md). Local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration, and empty optional subagent model selections are treated as inherited.
+The 3.21.13 pipeline forwards **Explore Subagent Model** selections, matches native model tooltips, connects context and MAX selection to the runtime budget, cancels active subagents with the parent chat, refreshes subagent transcripts, and forwards queued follow-ups when starting Build.
+See [Context and MAX mode](docs/model-modes.md).
+Local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration, and empty optional subagent model selections are treated as inherited.
 
 ## What it adds
 
@@ -49,7 +59,8 @@ Do not assume a fixed twofold speed increase or a fixed usage multiplier. Availa
 
 ## Requirements
 
-* macOS 26 or newer on an Apple Silicon (arm64) Mac and the exact Cursor 3.21.12 build listed above. The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
+* macOS 26 or newer on an Apple Silicon (arm64) Mac and the exact Cursor 3.21.13 build listed above.
+  The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
 * Node.js 22 or newer on PATH.
 * A Codex executable and a ChatGPT account with access to the requested models.
 * Existing file-based Codex authentication in `auth.json` and a populated `models_cache.json` in the same Codex home.
@@ -158,6 +169,9 @@ If you used an earlier private prototype, restore it using its own installer bef
 The patch changes the desktop workbench, the Agents Window workbench, both local agent runtime bundles, the main-process startup file and the corresponding workbench checksum in `product.json`.
 
 Only model IDs beginning with `chatgpt-codex/` use the bridge. Cursor continues to run its local agent and handle tools and approvals. The bridge translates the request into the streaming Responses format and sends it to `https://chatgpt.com/backend-api/codex/responses`. This is an internal service endpoint, not a supported public integration contract.
+Regular, resumed and summarized ChatGPT turns select Cursor's local client even when Agent Host is enabled.
+Other model selections retain their existing execution strategy.
+The native workspace execution provider remains available alongside Agent Host so subscription requests and their tools can start.
 
 Codex is used for sign-in and token renewal, not as the agent harness. The bridge reads the existing access token and account ID and asks Codex to refresh authentication after an unauthorized response. It does not implement a separate OAuth client or bundle anyone's credentials.
 
@@ -175,7 +189,7 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 
 * Live macOS SSH responses and file edits remain unverified; both workbench routing methods have synthetic coverage.
 * Only the listed macOS 26+ (Apple Silicon) client build is supported. Windows and Linux clients, Cloud, and Remote Machine are unsupported.
-* Later Cursor versions are unsupported until this tree gains a new 3.21.12-style table row, Mac hashes and verification.
+* Later Cursor versions are unsupported until this tree gains reviewed patch anchors, Mac hashes and verification for the new build.
 * Native IDE tool calls and file edits passed on macOS. Agents Window, approvals and cancellation still need separate live checks.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.
 * The bridge uses Codex's local model cache. After switching accounts, open Codex to refresh its cache and reload the Cursor window. A stale cache may temporarily show models the new account cannot use.

@@ -11,7 +11,7 @@ test('the patch table has one row for the recognized Cursor version', () => {
   assert.deepEqual(Object.keys(workbench), [CURSOR_VERSION]);
   assert.ok(workbench[CURSOR_VERSION].desktop);
   assert.ok(workbench[CURSOR_VERSION].glass);
-  assert.equal(workbench[CURSOR_VERSION].commit, '05ddb9e824590e2c1db6bd2548dd71bf67ac9d20');
+  assert.equal(workbench[CURSOR_VERSION].commit, 'e44a49c17e334d442e58bbde931d791200f014a0');
 });
 
 test('wrapRuntime reads the minified parameter list and fails closed without an anchor', () => {
