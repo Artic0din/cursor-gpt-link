@@ -10,7 +10,7 @@ The minimum supported OS is macOS 26.
 
 ## Current checks
 
-All local tests passed, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All local tests passed, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control createAgent routing, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 
 Both links installed directly in `/Applications/Cursor.app` on an earlier Mac build, GPT first and Claude second, with an existing Apple signing identity.
 Signing fixtures still verify preservation of hardened runtime and entitlements after patching and resource restoration.

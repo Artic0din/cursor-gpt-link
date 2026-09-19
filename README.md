@@ -20,7 +20,7 @@ This release targets Cursor 3.21.12 on macOS 26+ Apple Silicon. It is not a gene
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
 This fork targets Cursor **3.21.12** only. Installation stays rejected until `scripts/capture-hashes.mjs` records darwin/arm64 hashes from an original Mac app. Older Cursor versions are not supported.
-Use a local workspace with the **This Mac** environment; cloud agents cannot reach these local bridges and are unsupported.
+Use a local workspace with **This Mac** or **This Mac (Remote Control)**. Cloud and Remote Machine cannot reach these local bridges and remain unsupported.
 The retained Windows `supported-build-3.21.12.json` is historical upstream metadata and is rejected on macOS.
 The installer checks the exact version, commit and all six original-file hashes before writing.
 See [testing notes](docs/testing.md) for current macOS results and separately labelled upstream history.
@@ -97,6 +97,14 @@ Signature verification and an Electron native-loading check must pass before ins
 The app and state directory are restricted to their owner because patched bundles contain local bridge keys.
 App preflight leaves permissions unchanged; the restriction is applied only when the prepared patch is written.
 
+## This Mac (Remote Control)
+
+Remote Control still runs on this computer, but Cursor creates those agents through the cloud agent RPC.
+That RPC rejects `chatgpt-codex/` model IDs (`BAD_MODEL_NAME`).
+The patch keeps subscription models on the same local repository path as **This Mac**, so the existing local bridge serves them.
+Cursor-native models on Remote Control are unchanged.
+Cloud and Remote Machine remain unsupported.
+
 ## Remote SSH
 
 The inherited Remote SSH routing sends model requests through Cursor's dedicated local runtime to the bridge on your Mac.
@@ -111,6 +119,7 @@ This patch selects Cursor's dedicated local runtime for ChatGPT models in remote
 Other models retain their existing runtime selection.
 
 Both workbench routing methods passed synthetic checks against the supported Mac build.
+Glass createAgent routing keeps Remote Control subscription models on the local repository and leaves Cloud / Remote Machine on the cloud repository.
 Earlier upstream SSH file-edit reports came from Windows; fresh macOS SSH testing is pending.
 
 To upgrade an existing public installation, close Cursor, run `node patcher.mjs restore` using the same state directory, update this repository with `git pull`, then run `node patcher.mjs install`. For a private prototype, use its original restore command first.
@@ -165,7 +174,7 @@ Run `npm run test:attachments` against an installed bridge to repeat the image a
 ## Limitations
 
 * Live macOS SSH responses and file edits remain unverified; both workbench routing methods have synthetic coverage.
-* Only the listed macOS 26+ (Apple Silicon) client build is supported. Windows and Linux clients and cloud agents are unsupported.
+* Only the listed macOS 26+ (Apple Silicon) client build is supported. Windows and Linux clients, Cloud, and Remote Machine are unsupported.
 * Later Cursor versions are unsupported until this tree gains a new 3.21.12-style table row, Mac hashes and verification.
 * Native IDE tool calls and file edits passed on macOS. Agents Window, approvals and cancellation still need separate live checks.
 * Authentication formats, model metadata and the internal endpoint can change independently of Cursor.

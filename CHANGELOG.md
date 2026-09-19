@@ -12,6 +12,7 @@ The format follows Keep a Changelog.
 
 ### Fixed
 
+- Kept ChatGPT and Claude subscription models on This Mac's local runtime when the Agents Window target is This Mac (Remote Control), instead of sending those IDs through Cursor's cloud create RPC. Cloud and Remote Machine targets are unchanged.
 - Filtered Explore model IDs by the ChatGPT prefix before adding them to the local catalog.
 - Restored an older patched app from its existing manifest without requiring that Cursor version to still be an install target.
 - Kept restore state until signing succeeds and required removal of a companion Claude patch before restoring ChatGPT.
