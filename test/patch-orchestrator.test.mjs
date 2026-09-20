@@ -37,8 +37,8 @@ test('serialized max-mode helper does not close over Node imports', () => {
 
 test('glass Remote Control routing is wired into the shared workbench pipeline', () => {
   const orchestrator = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/patch-orchestrator.mjs'), 'utf8');
-  assert.match(orchestrator, /import \{patchRemoteControlRouting\} from '\.\/remote-control\.mjs'/);
-  assert.match(orchestrator, /patchRemoteControlRouting\(source, surfaceName\)/);
+  assert.match(orchestrator, /import\s*\{\s*patchRemoteControlRouting\s*\}\s*from\s*(['"])\.\/remote-control\.mjs\1/);
+  assert.match(orchestrator, /patchRemoteControlRouting\(\s*source\s*,\s*surfaceName\s*\)/);
   const helper = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/remote-control.mjs'), 'utf8');
   assert.equal(helper.includes('requireSubscriptionPrefix'), false);
   assert.match(helper, /chatgpt-codex\//);

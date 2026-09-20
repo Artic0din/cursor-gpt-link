@@ -28,6 +28,26 @@ test('Remote Control subscription turns reuse the This Mac workspace; cloud VMs 
   );
 });
 
+test('Remote Control checks every selected model and modelName without changing the configuration', () => {
+  for (const prefix of ['chatgpt-codex/', 'claude-subscription/']) {
+    for (const config of [
+      {selectedModels: [{modelId: 'ordinary-model'}, {modelId: prefix + 'selected'}]},
+      {selectedModels: [{modelId: 'ordinary-model'}], modelName: prefix + 'named'},
+      {selectedModels: [null, {modelId: 'ordinary-model'}, {modelId: prefix + 'selected'}], modelName: 'ordinary-model'},
+      {modelName: prefix + 'named'}
+    ]) {
+      const options = {modelConfig: config}, original = structuredClone(options);
+      assert.deepEqual(choose(remoteControl, options), thisMac);
+      assert.strictEqual(choose(cloudVm, options), cloudVm);
+      assert.strictEqual(choose(thisMac, options), thisMac);
+      const nonPrivate = {type: 'new', environment: {usePrivateWorker: false, privateWorkspaceIdentifier: localWorkspace}};
+      assert.strictEqual(choose(nonPrivate, options), nonPrivate);
+      assert.deepEqual(options, original);
+    }
+  }
+  assert.strictEqual(choose(remoteControl, {modelConfig: {selectedModels: [null, {}, {modelId: 42}, {modelId: 'ordinary-model'}], modelName: 'other-model'}}), remoteControl);
+});
+
 const combinedFixture = `class Combined{constructor(localRepo,cloudRepo){this.localRepo=localRepo;this.cloudRepo=cloudRepo}
 resolveEnvironmentRepo(e){switch(e.type){case"existing":return this.localRepo;case"new":return this.cloudRepo;default:throw new Error("Unknown environment type")}}
 async createAgent(e,n,i){const r=this.resolveEnvironmentRepo(n);return r.createAgent(e,n,i)}}`;
@@ -57,4 +77,11 @@ test('desktop workbenches without the combined repo are unchanged; a missing gla
   const patched = patchRemoteControlRouting(combinedFixture, 'glass');
   assert.equal(patchRemoteControlRouting(patched, 'glass'), patched);
   assert.throws(() => patchRemoteControlRouting(combinedFixture + combinedFixture, 'glass'), /not unique/);
+});
+
+test('all structural createAgent anchors must be unique even when parameter names differ', () => {
+  const distinctAnchor = 'class Other{async createAgent(prompt,environment,options){const repo=this.resolveEnvironmentRepo(environment);return repo}}';
+  for (const surface of ['desktop', 'glass']) {
+    assert.throws(() => patchRemoteControlRouting(combinedFixture + distinctAnchor, surface), /anchor not unique/);
+  }
 });
