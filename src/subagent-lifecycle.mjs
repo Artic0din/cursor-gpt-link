@@ -82,7 +82,7 @@ function once(source, before, after) {
 // Minified identifiers per reviewed build: the subagent service used to cancel a
 // tree, and the untracked reader around the transcript conversation map.
 const lifecycleSymbols = {
-  '3.21.12': {desktop:{service:'pZe', untrack:'Xi'}, glass:{service:'lde', untrack:'Jr'}},
+  '3.21.13': {desktop:{service:'pZe', untrack:'Xi'}, glass:{service:'lde', untrack:'Jr'}},
 };
 
 export function patchSubagentLifecycle(source, surface, prefix, version) {

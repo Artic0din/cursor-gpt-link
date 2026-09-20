@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {remoteRoutingPrelude, spelledAnchors, patchRemoteRouting} from '../src/remote-routing.mjs';
-import {workbench} from '../src/patch-symbols.mjs';
+import {CURSOR_VERSION, workbench} from '../src/patch-symbols.mjs';
 
 const isBridgeModel = model => typeof model === 'string' && model.startsWith('chatgpt-codex/');
 const chooseDedicated = new Function('__isChatgptBridgeModel', remoteRoutingPrelude + '\nreturn __useChatgptDedicatedRuntime;')(isBridgeModel);
@@ -15,7 +15,7 @@ test('SSH ChatGPT inference stays local; ordinary and local sessions retain thei
 });
 
 for (const surface of ['desktop', 'glass']) {
-  const row = workbench['3.21.12'][surface];
+  const row = workbench[CURSOR_VERSION][surface];
   const anchors = spelledAnchors(row);
   test(surface + ': dedicated routing passes workspace resources and cancellation unchanged', async () => {
     const desktop = surface === 'desktop';
@@ -25,8 +25,8 @@ for (const surface of ['desktop', 'glass']) {
     const fixture = anchors.activation + '\nasync function route(model,request,callbacks,resources,signal){' +
       (desktop ? 'const g=model,f=request,v=callbacks,c=resources,e={signal};' : 'const p=model,g=request,v=callbacks,l=resources,t={signal};') +
       anchors.selector + branch + ';}';
-    const source = patchRemoteRouting(fixture, surface, '3.21.12');
-    const route = new Function('__isChatgptBridgeModel', '__chatgptBridgeBase', 'Qh', 'Pp',
+    const source = patchRemoteRouting(fixture, surface, CURSOR_VERSION);
+    const route = new Function('__isChatgptBridgeModel', '__chatgptBridgeBase', 'qh', 'Rp',
       source + '\nreturn route;')(isBridgeModel, 'http://127.0.0.1:43187', () => false, () => false);
     const request = {baseUrl:'http://127.0.0.1:43187/v1'};
     const resources = {remoteWorkspace:'synthetic-ssh-workspace'};
@@ -46,7 +46,7 @@ for (const surface of ['desktop', 'glass']) {
   });
 
   test(surface + ': dedicated extension is available without enabling global local mode', () => {
-    const source = patchRemoteRouting(anchors.activation + '\nconst selection=' + anchors.selector + '1:0;', surface, '3.21.12');
+    const source = patchRemoteRouting(anchors.activation + '\nconst selection=' + anchors.selector + '1:0;', surface, CURSOR_VERSION);
     const start = source.indexOf(anchors.enabled);
     assert.ok(start >= 0);
     const name = row.activation.match(/^function ([\w$]+)/)[1];
@@ -62,7 +62,7 @@ test('unknown or omitted routing versions fail closed', () => {
 });
 
 test('unknown or repeated remote anchors fail before producing a patch', () => {
-  assert.throws(() => patchRemoteRouting('', 'desktop', '3.21.12'), /not unique/);
-  const anchors = spelledAnchors(workbench['3.21.12'].desktop);
-  assert.throws(() => patchRemoteRouting(anchors.selector.repeat(2), 'desktop', '3.21.12'), /not unique/);
+  assert.throws(() => patchRemoteRouting('', 'desktop', CURSOR_VERSION), /not unique/);
+  const anchors = spelledAnchors(workbench[CURSOR_VERSION].desktop);
+  assert.throws(() => patchRemoteRouting(anchors.selector.repeat(2), 'desktop', CURSOR_VERSION), /not unique/);
 });

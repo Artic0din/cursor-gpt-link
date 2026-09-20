@@ -6,7 +6,7 @@ import {exercisePatchedLocalAgent} from './workbench-routing-check.mjs';
 
 export async function verifySubagentSettingsWorkbench(source, prefix='chatgpt-codex/') {
   const selected=await exercisePatchedLocalAgent(source,{modelId:prefix+'test-model',authority:'ssh-remote+test-host',nativeSetting:false,prefix});
-  assert.deepEqual(selected.request.availableModelIds,['selected-explore-model']);
+  assert.deepEqual(selected.request.availableModelIds,[prefix+'selected-explore-model']);
   assert.deepEqual(selected.request.runOptions.subagentModelOverrides,[selected.override.toBinary()]);
   const ordinary=await exercisePatchedLocalAgent(source,{modelId:'ordinary-model',authority:'ssh-remote+test-host',nativeSetting:false,prefix});
   assert.deepEqual(ordinary.request.availableModelIds,[]);
@@ -33,8 +33,14 @@ export function verifySubagentSettings(source) {
   const overrides=[{subagentType:'explore',selection:{case:'model',value:{modelId,parameters:selectedParams}}}];
   const base={modelId:parent,localProvider:{kind:'http',endpoints:[]},modelParameters:parentParams,subagentModelOverrides:overrides};
   assert.equal(native(base).subagentModelOverrides.explore.type,'inherit','Original missing-catalog failure reproduced');
-  const input={...base,availableModels:selectedModelIds([],overrides,parent,'chatgpt-codex/').map(id=>({id}))};
+  const input={...base,availableModels:selectedModelIds([],overrides,parent,'chatgpt-codex/').map(modelId=>({modelId}))};
   const props=configureTaskProps(input,native(input),'chatgpt-codex/');
+  if(modelId!==child){
+   assert.deepEqual(input.availableModels,[]);
+   assert.equal(props.subagentModelOverrides.explore.type,'inherit');
+   assert.equal(props.subagentModels.__subscriptionSelection,undefined);
+   continue;
+  }
   assert.deepEqual(props.subagentModelOverrides.explore,{type:'model',modelId});
   assert.deepEqual(props.parentModelParameters,parentParams);
   assert.deepEqual(selectedParameters(props,{subagent_type:{type:{case:'explore'}},userRequestedModelId:modelId},modelId,undefined,'chatgpt-codex/'),selectedParams);
