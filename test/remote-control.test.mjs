@@ -1,87 +1,71 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {patchRemoteControlRouting, remoteControlPrelude} from '../src/remote-control.mjs';
+import {patchRemoteControlGuard, remoteControlPrelude} from '../src/remote-control.mjs';
 
-const choose = new Function(remoteControlPrelude + '\nreturn __subscriptionRemoteControlEnvironment;')();
+const guard = new Function(remoteControlPrelude + '\nreturn __subscriptionRemoteControlGuard;')();
 const localWorkspace = {id: 'this-mac-workspace'};
-const remoteControl = {type: 'new', environment: {usePrivateWorker: true, privateWorkspaceIdentifier: localWorkspace}};
-const cloudVm = {type: 'new', environment: {id: 'github.com/example/repo'}};
-const thisMac = {type: 'existing', environment: localWorkspace};
+const unavailable = /Subscription models are not available on This Mac \(Remote Control\)/;
 
 function modelConfig(modelId) {
-  return {modelConfig: {selectedModels: [{modelId}], modelName: modelId}};
+  return {selectedModels: [{modelId}], modelName: modelId};
 }
 
-test('Remote Control subscription turns reuse the This Mac workspace; cloud VMs stay on the cloud repo', () => {
-  assert.deepEqual(choose(remoteControl, modelConfig('chatgpt-codex/test-model')), thisMac);
-  assert.deepEqual(choose(remoteControl, modelConfig('claude-subscription/opus')), thisMac);
-  assert.equal(choose(remoteControl, modelConfig('grok-4.6')), remoteControl);
-  assert.equal(choose(cloudVm, modelConfig('chatgpt-codex/test-model')), cloudVm);
-  assert.equal(choose(thisMac, modelConfig('chatgpt-codex/test-model')), thisMac);
-  assert.equal(choose(remoteControl, {}), remoteControl);
-  const unlabeled = {type: 'new', environment: {usePrivateWorker: true}};
-  assert.equal(choose(unlabeled, modelConfig('chatgpt-codex/test-model')), unlabeled);
-  assert.deepEqual(
-    choose(unlabeled, {...modelConfig('chatgpt-codex/test-model'), privateWorkspaceIdentifier: localWorkspace}),
-    thisMac
-  );
-});
+const subscriptionConfigs = ['claude-subscription/opus', 'chatgpt-codex/test-model'].flatMap(modelId => [
+  modelConfig(modelId),
+  {modelName: modelId, selectedModels: [{modelId: 'grok-4.6'}]},
+  {modelName: 'grok-4.6', selectedModels: [{modelId: 'grok-4.6'}, {modelId}]},
+  {modelName: 'grok-4.6', selectedModels: [{modelId}, {modelId: 'grok-4.6'}]},
+  {modelName: modelId, selectedModels: []},
+  {modelName: modelId},
+  {selectedModels: [null, {}, {modelId: 7}, {modelId}]}
+]);
 
-test('Remote Control checks every selected model and modelName without changing the configuration', () => {
-  for (const prefix of ['chatgpt-codex/', 'claude-subscription/']) {
-    for (const config of [
-      {selectedModels: [{modelId: 'ordinary-model'}, {modelId: prefix + 'selected'}]},
-      {selectedModels: [{modelId: 'ordinary-model'}], modelName: prefix + 'named'},
-      {selectedModels: [null, {modelId: 'ordinary-model'}, {modelId: prefix + 'selected'}], modelName: 'ordinary-model'},
-      {modelName: prefix + 'named'}
-    ]) {
-      const options = {modelConfig: config}, original = structuredClone(options);
-      assert.deepEqual(choose(remoteControl, options), thisMac);
-      assert.strictEqual(choose(cloudVm, options), cloudVm);
-      assert.strictEqual(choose(thisMac, options), thisMac);
-      const nonPrivate = {type: 'new', environment: {usePrivateWorker: false, privateWorkspaceIdentifier: localWorkspace}};
-      assert.strictEqual(choose(nonPrivate, options), nonPrivate);
-      assert.deepEqual(options, original);
+const remoteControl = config => ({modelConfig: config, usePrivateWorker: true, privateWorkspaceIdentifier: localWorkspace});
+
+test('Remote Control rejects subscription models; pools, cloud VMs and native models pass through', () => {
+  for (const config of subscriptionConfigs) {
+    assert.throws(() => guard(remoteControl(config)), unavailable);
+    assert.doesNotThrow(() => guard({modelConfig: config, usePrivateWorker: true, poolName: 'pool'}));
+    assert.doesNotThrow(() => guard({modelConfig: config}));
+    for (const usePrivateWorker of [false, 'true', undefined]) {
+      assert.doesNotThrow(() => guard({modelConfig: config, usePrivateWorker, privateWorkspaceIdentifier: localWorkspace}));
     }
   }
-  assert.strictEqual(choose(remoteControl, {modelConfig: {selectedModels: [null, {}, {modelId: 42}, {modelId: 'ordinary-model'}], modelName: 'other-model'}}), remoteControl);
-});
-
-const combinedFixture = `class Combined{constructor(localRepo,cloudRepo){this.localRepo=localRepo;this.cloudRepo=cloudRepo}
-resolveEnvironmentRepo(e){switch(e.type){case"existing":return this.localRepo;case"new":return this.cloudRepo;default:throw new Error("Unknown environment type")}}
-async createAgent(e,n,i){const r=this.resolveEnvironmentRepo(n);return r.createAgent(e,n,i)}}`;
-
-test('glass createAgent sends Remote Control subscription models through localRepo', async () => {
-  const source = patchRemoteControlRouting(combinedFixture, 'glass');
-  execFileSync(process.execPath, ['--check', '--input-type=module'], {input: source, stdio: 'pipe'});
-  const Combined = new Function(source + '\nreturn Combined;')();
-  const calls = [];
-  const repo = new Combined(
-    {createAgent: (...args) => { calls.push(['local', ...args]); return 'local'; }},
-    {createAgent: (...args) => { calls.push(['cloud', ...args]); return 'cloud'; }}
-  );
-  assert.equal(await repo.createAgent('prompt', remoteControl, modelConfig('chatgpt-codex/test-model')), 'local');
-  assert.deepEqual(calls.at(-1)[2], thisMac);
-  assert.equal(await repo.createAgent('prompt', remoteControl, modelConfig('claude-subscription/opus')), 'local');
-  assert.equal(await repo.createAgent('prompt', remoteControl, modelConfig('grok-4.6')), 'cloud');
-  assert.equal(await repo.createAgent('prompt', cloudVm, modelConfig('chatgpt-codex/test-model')), 'cloud');
-  assert.equal(await repo.createAgent('prompt', thisMac, modelConfig('chatgpt-codex/test-model')), 'local');
-  const unlabeled = {type: 'new', environment: {usePrivateWorker: true}};
-  assert.equal(await repo.createAgent('prompt', unlabeled, {...modelConfig('chatgpt-codex/test-model'), privateWorkspaceIdentifier: localWorkspace}), 'local');
-});
-
-test('desktop workbenches without the combined repo are unchanged; a missing glass anchor fails closed', () => {
-  assert.equal(patchRemoteControlRouting('desktop-workbench', 'desktop'), 'desktop-workbench');
-  assert.throws(() => patchRemoteControlRouting('desktop-workbench', 'glass'), /anchor missing/);
-  const patched = patchRemoteControlRouting(combinedFixture, 'glass');
-  assert.equal(patchRemoteControlRouting(patched, 'glass'), patched);
-  assert.throws(() => patchRemoteControlRouting(combinedFixture + combinedFixture, 'glass'), /not unique/);
-});
-
-test('all structural createAgent anchors must be unique even when parameter names differ', () => {
-  const distinctAnchor = 'class Other{async createAgent(prompt,environment,options){const repo=this.resolveEnvironmentRepo(environment);return repo}}';
-  for (const surface of ['desktop', 'glass']) {
-    assert.throws(() => patchRemoteControlRouting(combinedFixture + distinctAnchor, surface), /anchor not unique/);
+  assert.doesNotThrow(() => guard(remoteControl(modelConfig('grok-4.6'))));
+  for (const modelId of ['claude-subscription', 'chatgpt-codex', 'other/claude-subscription/opus']) {
+    assert.doesNotThrow(() => guard(remoteControl(modelConfig(modelId))));
   }
+  assert.doesNotThrow(() => guard(remoteControl({selectedModels: [null, {}, {modelId: 7}]})));
+  assert.doesNotThrow(() => guard(remoteControl(undefined)));
+});
+
+// Mirrors the 3.21.13 CloudAgentRepositoryService.createAgent shape around Cursor's fault-injection point.
+const cloudFixture = `class Cloud{constructor(start){this.start=start;this.errors=[]}
+async createAgent(t,e,n){const{environment:i,options:r}={environment:e,options:n},s=r.modelConfig,o=r.usePrivateWorker??i.environment.usePrivateWorker,a=r.privateWorkspaceIdentifier??i.environment.privateWorkspaceIdentifier,l=void 0,c=r.poolName,u={...r,modelConfig:s,usePrivateWorker:o,privateWorkspaceIdentifier:a,privateWorkerOwnerFilter:l,poolName:c},{onCreated:d,richText:h}=u,p=r.context;let g,v;try{if(false)throw new ua("Debug simulated cloud agent creation failure",zs.Internal);g=await this.start(u)}catch(X){throw this.errors.push({submitErrorDetails:{message:X.message}}),X}return g}}
+class ua extends Error{};const zs={Internal:13};`;
+
+test('cloud createAgent reports the rejection through its submit-error path before the create RPC', async () => {
+  const source = patchRemoteControlGuard(cloudFixture);
+  execFileSync(process.execPath, ['--check', '--input-type=module'], {input: source, stdio: 'pipe'});
+  const Cloud = new Function(source + '\nreturn Cloud;')();
+  const started = [];
+  const cloud = new Cloud(async options => { started.push(options); return 'created'; });
+  const remoteControlEnvironment = {type: 'new', environment: {usePrivateWorker: true, privateWorkspaceIdentifier: localWorkspace}};
+  for (const config of subscriptionConfigs) {
+    await assert.rejects(cloud.createAgent('prompt', remoteControlEnvironment, {modelConfig: config}), unavailable);
+    assert.match(cloud.errors.at(-1).submitErrorDetails.message, unavailable);
+  }
+  assert.deepEqual(started, []);
+  assert.equal(await cloud.createAgent('prompt', remoteControlEnvironment, {modelConfig: modelConfig('grok-4.6')}), 'created');
+  const pool = {type: 'new', environment: {usePrivateWorker: true, selectedPoolName: 'pool'}};
+  assert.equal(await cloud.createAgent('prompt', pool, {modelConfig: modelConfig('claude-subscription/opus')}), 'created');
+});
+
+test('the guard anchor fails closed when missing, duplicated or already rerouted, and patches once', () => {
+  assert.throws(() => patchRemoteControlGuard('workbench'), /anchor missing/);
+  assert.throws(() => patchRemoteControlGuard(cloudFixture + cloudFixture.replace(/\bu\b(?==\{)/, 'w')), /not unique/);
+  const patched = patchRemoteControlGuard(cloudFixture);
+  assert.equal(patchRemoteControlGuard(patched), patched);
+  assert.throws(() => patchRemoteControlGuard('function __subscriptionRemoteControlEnvironment(){}' + cloudFixture), /earlier Remote Control reroute/);
 });
