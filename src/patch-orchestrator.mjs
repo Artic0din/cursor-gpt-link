@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {patchRemoteRouting} from './remote-routing.mjs';
+import {patchRemoteControlRouting} from './remote-control.mjs';
 import {pickerSectionHelpersSrc, patchPickerSections} from './picker-sections.mjs';
 import {SUBSCRIPTION_PREFIX, workbenchEntry} from './patch-symbols.mjs';
 
@@ -102,6 +103,7 @@ function patchWorkbenchSurface(source, surfaceName, anchors, features, prefix, v
   source += loginCommand(surface.login);
   source = addUsage(source, surface.usage);
   source = patchRemoteRouting(source, surfaceName, version);
+  source = patchRemoteControlRouting(source, surfaceName);
   if (features.max) source = patchMaxMode(source, prefix);
   if (features.settings) source = patchSubagentSettingsWorkbench(source, prefix);
   if (features.bubbles) source = patchSubagentBubbles(source, surfaceName, version);

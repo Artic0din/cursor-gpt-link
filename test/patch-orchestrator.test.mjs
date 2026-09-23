@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {replaceOnce, wrapRuntime} from '../src/patch-orchestrator.mjs';
 import {CURSOR_VERSION, workbench} from '../src/patch-symbols.mjs';
 import {maxModeVariant} from '../src/max-mode.mjs';
+import fs from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
 
 test('the patch table has one row for the recognized Cursor version', () => {
   assert.deepEqual(Object.keys(workbench), [CURSOR_VERSION]);
@@ -30,4 +33,14 @@ test('serialized max-mode helper does not close over Node imports', () => {
   const source = maxModeVariant.toString();
   assert.equal(source.includes('requireSubscriptionPrefix'), false);
   assert.equal(source.includes('GPT_PREFIX'), false);
+});
+
+test('glass Remote Control routing is wired into the shared workbench pipeline', () => {
+  const orchestrator = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/patch-orchestrator.mjs'), 'utf8');
+  assert.match(orchestrator, /import\s*\{\s*patchRemoteControlRouting\s*\}\s*from\s*(['"])\.\/remote-control\.mjs\1/);
+  assert.match(orchestrator, /patchRemoteControlRouting\(\s*source\s*,\s*surfaceName\s*\)/);
+  const helper = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/remote-control.mjs'), 'utf8');
+  assert.equal(helper.includes('requireSubscriptionPrefix'), false);
+  assert.match(helper, /chatgpt-codex\//);
+  assert.match(helper, /claude-subscription\//);
 });

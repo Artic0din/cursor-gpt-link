@@ -9,7 +9,7 @@ The minimum supported OS is macOS 26.
 
 ## Current checks
 
-All 102 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All 108 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control createAgent routing, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 The new-build acceptance test first reproduced rejection of 3.21.13 and now verifies that the captured build is recognized while a different commit is rejected.
 `node patcher.mjs check` verified the original installed 3.21.13 Mac app without modifying it.
 `node scripts/verify-build.mjs` generated all six patch candidates and passed syntax, unique-anchor and workbench-checksum checks.
@@ -55,7 +55,9 @@ CI runs on macOS 26 with Node.js 22, 24 and 26; those runners do not contain a r
 
 For an original supported app, run `node scripts/verify-build.mjs "/Applications/Cursor.app/Contents/Resources/app"`.
 It validates hashes, generates candidates, checks syntax and invokes native routing and parameter normalization without modifying Cursor.
-For a new Mac build, capture original files with `scripts/capture-hashes.mjs`, review the complete metadata and patch anchors, then run build verification before adding support.
+For a new Mac build, capture original files with `scripts/capture-hashes.mjs` and copy its JSON into `src/supported-build-<version>.json` with the captured macOS metadata.
+Update `CURSOR_VERSION` and the workbench symbols in `src/patch-symbols.mjs`, and register the matching version builder in `src/patches.mjs` before running verification.
+Review the complete metadata and patch anchors, then run build verification before claiming support for that build.
 Capture rejects missing files, invalid signatures and executables without arm64 support.
 
 With the bridge running, `npm run test:attachments` makes real image and PDF requests and consumes subscription usage.
