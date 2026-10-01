@@ -1,56 +1,56 @@
 import {GPT_PREFIX} from './subscription-prefix.mjs';
 
-export const CURSOR_VERSION = '3.21.13';
+export const CURSOR_VERSION = '3.22.12';
 export const SUBSCRIPTION_PREFIX = GPT_PREFIX;
 
 export const workbench = {
   [CURSOR_VERSION]: {
-    commit: 'e44a49c17e334d442e58bbde931d791200f014a0',
+    commit: '3a92974361033b2051526321308c2740fe5912c0',
     features: {max: true, settings: true, lifecycle: true, actions: true, bubbles: true, model: true},
     desktop: {
       picker: {
-        groupReturn: 'return c.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...ie,...ee],others:le}:{leading:ie,promoted:ee,others:le}',
-        promotedAnchor: 'jP(smt,{models:B.promoted,title:c?.promotedSectionTitle',
-        modelsVar: 'B', jsx: 'jP', fmt: 'smt', renderModel: 'x'
+        groupReturn: 'return c.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...se,...ee],others:ae}:{leading:se,promoted:ee,others:ae}',
+        promotedAnchor: 'oL(tgt,{models:B.promoted,title:c?.promotedSectionTitle',
+        modelsVar: 'B', jsx: 'oL', fmt: 'tgt', renderModel: 'x'
       },
       models: 'c',
-      mapper: 'V=>DLt(V)',
+      mapper: 'j=>yNt(j)',
       provider: 'async getLocalAgentProviderConfig(e,t){',
       model: 't?.requestedModel?.modelId??e?.modelId',
-      local: 'zc',
-      run: 'async run(e,t,n,i,r,s,o,a,c,l,u){const h=a6d(u,',
-      native: 'qh(this.storageService,"useDedicatedLocalAgentRuntimeHost")',
+      local: 'Rc',
+      run: 'async run(e,t,n,i,r,s,o,a,c,l,u){const h=PGd(u,',
+      native: 'jh(this.storageService,"useDedicatedLocalAgentRuntimeHost")',
       nativeModel: 'g',
-      activation: 'function nhp(e){return zc.localMode&&e?.get(Ooy,-1)==="true"}',
-      login: {register: '$e', baseClass: 'ct', notifier: 'si'},
+      activation: 'function $wp(e){return Rc.localMode&&e?.get(T0y,-1)==="true"}',
+      login: {register: 'We', baseClass: 'at', notifier: 'ai'},
       usage: {
-        jsx: 'GIy', useState: 'Zur', useEffect: 'eIy', card: 'ob', zs: 'ks', bar: 'kA', barStyle: 'rdr',
-        fn: 'function ZIy(e){const t=Obp(119)',
-        children: 'title:"Plan & Usage",children:[sn,qt,dn,bn]',
-        childrenClaude: 'title:"Plan & Usage",children:[sn,qt,dn,bn,GIy(__claudeUsageSection,{})]'
+        jsx: '$7y', useState: 'cpr', useEffect: 'Y8y', card: 'Sv', zs: 'ks', bar: 'SR', barStyle: 'gpr',
+        fn: 'function q7y(e){const t=Exp(119)',
+        children: 'title:"Plan & Usage",children:[qt,Jt,Pt,on]',
+        childrenClaude: 'title:"Plan & Usage",children:[qt,Jt,Pt,on,$7y(__claudeUsageSection,{})]'
       }
     },
     glass: {
       picker: {
-        groupReturn: 'return l.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...ne,...X],others:ie}:{leading:ne,promoted:X,others:ie}',
-        promotedAnchor: 'Y5(e9t,{models:N.promoted,title:l?.promotedSectionTitle',
-        modelsVar: 'N', jsx: 'Y5', fmt: 'e9t', renderModel: 'w'
+        groupReturn: 'return l.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...ne,...X],others:re}:{leading:ne,promoted:X,others:re}',
+        promotedAnchor: '_F(p8t,{models:N.promoted,title:l?.promotedSectionTitle',
+        modelsVar: 'N', jsx: '_F', fmt: 'p8t', renderModel: 'w'
       },
       models: 'l',
-      mapper: 'U=>Von(U)',
+      mapper: 'U=>fln(U)',
       provider: 'async getLocalAgentProviderConfig(t,e){',
       model: 'e?.requestedModel?.modelId??t?.modelId',
-      local: 'Rl',
-      run: 'async run(t,e,n,i,r,s,o,a,l,c,u){const d=wum(u,',
-      native: 'Rp(this.storageService,"useDedicatedLocalAgentRuntimeHost")',
+      local: 'fl',
+      run: 'async run(t,e,n,i,r,s,o,a,l,c,u){const d=rwm(u,',
+      native: 'Op(this.storageService,"useDedicatedLocalAgentRuntimeHost")',
       nativeModel: 'p',
-      activation: 'function lNg(t){return Rl.localMode&&t?.get(fNg,-1)==="true"}',
-      login: {register: 'Lt', baseClass: 'Qt', errorPrefix: 'ChatGPT-'},
+      activation: 'function HWg(t){return fl.localMode&&t?.get(XWg,-1)==="true"}',
+      login: {register: 'Lt', baseClass: 'en', errorPrefix: 'ChatGPT-'},
       usage: {
-        jsx: 'xik', useState: 'gds', useEffect: 'Eik', card: 'Pf', zs: 'Os', bar: 'Om', barStyle: 'EEi',
-        fn: 'function Rik(t){const e=fBg(119)',
-        children: 'title:"Plan & Usage",children:[pt,bt,gt,St]',
-        childrenClaude: 'title:"Plan & Usage",children:[pt,bt,gt,St,xik(__claudeUsageSection,{})]'
+        jsx: 'JCk', useState: 'wms', useEffect: 'ZCk', card: 'rf', zs: 'Hs', bar: 'Pg', barStyle: 'PIi',
+        fn: 'function nTk(t){const e=XQg(119)',
+        children: 'title:"Plan & Usage",children:[lt,dt,gt,vt]',
+        childrenClaude: 'title:"Plan & Usage",children:[lt,dt,gt,vt,JCk(__claudeUsageSection,{})]'
       }
     }
   }

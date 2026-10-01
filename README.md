@@ -2,7 +2,7 @@
 
 An experimental patch that adds models from your local Codex catalog to Cursor's model picker and routes them through your existing ChatGPT sign-in. It uses Cursor's local agent runtime. It does not install an extension.
 
-This release targets Cursor 3.21.13 on macOS 26+ Apple Silicon.
+This release targets Cursor 3.22.12 on macOS 26+ Apple Silicon.
 It is not a general patch for every Cursor version, operating system, subscription, or model.
 Windows and Linux are not supported.
 
@@ -10,20 +10,20 @@ Windows and Linux are not supported.
 
 | Item | Current status |
 | --- | --- |
-| Cursor | 3.21.13, macOS 26+ (Apple Silicon, arm64) |
-| Latest Cursor commit | `e44a49c17e334d442e58bbde931d791200f014a0` (3.21.13) |
-| Latest local test date | September 19, 2026; native IDE write/read-back, installation and original Mac hashes verified |
+| Cursor | 3.22.12, macOS 26+ (Apple Silicon, arm64) |
+| Latest Cursor commit | `3a92974361033b2051526321308c2740fe5912c0` (3.22.12) |
+| Latest local test date | October 1, 2026; original Mac hashes, unit tests and patch-candidate checks verified on 3.22.12 |
 | Node.js used for testing | 26.8.2 |
 | Codex CLI used for testing | 0.154.0 |
-| macOS signing | Installed 3.21.13 signature, hardened runtime, entitlements and native loading checked |
-| Bridge startup | Final Cursor restart automatically started both installed bridges; authenticated health checks passed |
+| macOS signing | Original 3.22.12 download signature verified; patched-app signing and native loading pending |
+| Bridge startup | Verified on 3.21.13; not yet rechecked on 3.22.12 |
 | Reasoning selection | Forwarding verified in both local runtimes |
-| IDE and Agents Window | Native IDE write/read-back passed on 3.21.13 with a ChatGPT Subscription model; Agents Window live testing is pending |
+| IDE and Agents Window | Native IDE write/read-back passed on 3.21.13; live testing on 3.22.12 and the Agents Window is pending |
 | Remote SSH sessions | Routing checked in both bundles; live macOS SSH testing is pending |
 | Agent Host runtime | Shared runtime supported; independent runtime temporarily unsupported |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
 
-This fork targets Cursor **3.21.13** only.
+This fork targets Cursor **3.22.12** only.
 The darwin/arm64 hashes were captured from an original signature-verified Mac app.
 Older Cursor versions are not supported.
 Use a local workspace with **This Mac**. Cloud, Remote Machine and **This Mac (Remote Control)** cannot reach these local bridges and remain unsupported.
@@ -33,7 +33,7 @@ The patch preserves Cursor's runtime flags and ordinary model routes.
 The installer checks the exact version, commit and all six original-file hashes before writing.
 See [testing notes](docs/testing.md) for current macOS results and separately labelled upstream history.
 
-The 3.21.13 pipeline forwards **Explore Subagent Model** selections, matches native model tooltips, connects context and MAX selection to the runtime budget, cancels active subagents with the parent chat, refreshes subagent transcripts, and forwards queued follow-ups when starting Build.
+The 3.22.12 pipeline forwards **Explore Subagent Model** selections, matches native model tooltips, connects context and MAX selection to the runtime budget, cancels active subagents with the parent chat, refreshes subagent transcripts, and forwards queued follow-ups when starting Build.
 See [Context and MAX mode](docs/model-modes.md).
 Local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration, and empty optional subagent model selections are treated as inherited.
 
@@ -59,7 +59,7 @@ Do not assume a fixed twofold speed increase or a fixed usage multiplier. Availa
 
 ## Requirements
 
-* macOS 26 or newer on an Apple Silicon (arm64) Mac and the exact Cursor 3.21.13 build listed above.
+* macOS 26 or newer on an Apple Silicon (arm64) Mac and the exact Cursor 3.22.12 build listed above.
   The machine architecture is detected through Rosetta, so an Intel Node.js running under translation is accepted.
 * Node.js 22 or newer on PATH.
 * A Codex executable and a ChatGPT account with access to the requested models.

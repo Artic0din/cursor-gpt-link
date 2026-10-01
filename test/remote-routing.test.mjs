@@ -26,8 +26,9 @@ for (const surface of ['desktop', 'glass']) {
       (desktop ? 'const g=model,f=request,v=callbacks,c=resources,e={signal};' : 'const p=model,g=request,v=callbacks,l=resources,t={signal};') +
       anchors.selector + branch + ';}';
     const source = patchRemoteRouting(fixture, surface, CURSOR_VERSION);
-    const route = new Function('__isChatgptBridgeModel', '__chatgptBridgeBase', 'qh', 'Rp',
-      source + '\nreturn route;')(isBridgeModel, 'http://127.0.0.1:43187', () => false, () => false);
+    const hostReader = row.native.slice(0, row.native.indexOf('('));
+    const route = new Function('__isChatgptBridgeModel', '__chatgptBridgeBase', hostReader,
+      source + '\nreturn route;')(isBridgeModel, 'http://127.0.0.1:43187', () => false);
     const request = {baseUrl:'http://127.0.0.1:43187/v1'};
     const resources = {remoteWorkspace:'synthetic-ssh-workspace'};
     const callbacks = {approval:'synthetic-native-callback'};

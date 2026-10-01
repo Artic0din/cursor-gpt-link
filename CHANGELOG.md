@@ -7,7 +7,7 @@ The format follows Keep a Changelog.
 
 ### Added
 
-- Added Cursor 3.21.13 support on Apple Silicon with verified original Mac hashes and refreshed native model picker, subscription usage and subagent symbols.
+- Added Cursor 3.22.12 support on Apple Silicon with verified original Mac hashes and refreshed native model picker, subscription usage and subagent symbols.
 - Targeted one Cursor build with one workbench symbol row and one patch pipeline, including Explore settings, context and MAX selection, transcript refresh and queued follow-ups.
 - Copied model tooltip and context-option helpers into the installed macOS bridge runtime.
 
@@ -29,6 +29,8 @@ The format follows Keep a Changelog.
 
 ### Changed
 
-- Restricted installation to the reviewed Cursor 3.21.13 Mac build and rejected different commits before patching.
+- Matched the agent-exec activation and subagent transcript anchors by shape instead of minified name, so a rename-only Cursor build no longer breaks them.
+
+- Restricted installation to the reviewed Cursor 3.22.12 Mac build and rejected different commits before patching.
 - Removed 3.20.x and earlier 3.21.x builders, hash files and feature gates.
 - Patched the selected app directly, without requiring a full-app backup.
