@@ -7,6 +7,7 @@ The format follows Keep a Changelog.
 
 ### Added
 
+- Showed subscription usage on the ChatGPT and Claude picker sections, using the window closest to its limit.
 - Added Cursor 3.22.12 support on Apple Silicon with verified original Mac hashes and refreshed native model picker, subscription usage and subagent symbols.
 - Targeted one Cursor build with one workbench symbol row and one patch pipeline, including Explore settings, context and MAX selection, transcript refresh and queued follow-ups.
 - Copied model tooltip and context-option helpers into the installed macOS bridge runtime.

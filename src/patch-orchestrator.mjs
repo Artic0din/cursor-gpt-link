@@ -14,6 +14,7 @@ import crypto from 'node:crypto';
 import {patchRemoteRouting} from './remote-routing.mjs';
 import {patchRemoteControlGuard} from './remote-control.mjs';
 import {pickerSectionHelpersSrc, patchPickerSections} from './picker-sections.mjs';
+import {usageLabelHelpersSrc} from './usage-label.mjs';
 import {SUBSCRIPTION_PREFIX, workbenchEntry} from './patch-symbols.mjs';
 
 export function replaceOnce(source, from, to) {
@@ -118,7 +119,7 @@ export function buildVersionPatches({root, cfg, models, nodePath, bridgePath, st
   const prefix = SUBSCRIPTION_PREFIX;
   const pending = [];
   const base = 'http://127.0.0.1:' + cfg.port;
-  const prelude = `\n/* cursor-chatgpt-bridge 0.1.3: account credentials stay in local bridge */\nvar __chatgptBridgeModels=${JSON.stringify(models)};\nconst __chatgptBridgeBase=${JSON.stringify(base)},__chatgptBridgeKey=${JSON.stringify(cfg.key)};\nfunction __isChatgptBridgeModel(m){return typeof m==="string"&&m.startsWith(${JSON.stringify(prefix)})}\nfunction __withChatgptBridgeModels(models){return [...models.filter(m=>!__isChatgptBridgeModel(m.name)),...__chatgptBridgeModels]}\nasync function __refreshChatgptBridgeModels(){try{const r=await fetch(__chatgptBridgeBase+"/picker-models",{headers:{Authorization:"Bearer "+__chatgptBridgeKey},signal:AbortSignal.timeout(2500)});if(r.ok){const data=await r.json();if(Array.isArray(data.models))__chatgptBridgeModels=data.models}}catch{}}\n${pickerSectionHelpersSrc}\n`;
+  const prelude = `\n/* cursor-chatgpt-bridge 0.1.3: account credentials stay in local bridge */\nvar __chatgptBridgeModels=${JSON.stringify(models)};\nconst __chatgptBridgeBase=${JSON.stringify(base)},__chatgptBridgeKey=${JSON.stringify(cfg.key)};\nfunction __isChatgptBridgeModel(m){return typeof m==="string"&&m.startsWith(${JSON.stringify(prefix)})}\nfunction __withChatgptBridgeModels(models){return [...models.filter(m=>!__isChatgptBridgeModel(m.name)),...__chatgptBridgeModels]}\nasync function __refreshChatgptBridgeModels(){try{const r=await fetch(__chatgptBridgeBase+"/picker-models",{headers:{Authorization:"Bearer "+__chatgptBridgeKey},signal:AbortSignal.timeout(2500)});if(r.ok){const data=await r.json();if(Array.isArray(data.models))__chatgptBridgeModels=data.models}}catch{}}\n${pickerSectionHelpersSrc}\n${usageLabelHelpersSrc}\n`;
   for (const surfaceName of ['desktop', 'glass']) {
     const workbenchPath = path.join(root, 'out/vs/workbench/workbench.' + surfaceName + '.main.js');
     pending.push({

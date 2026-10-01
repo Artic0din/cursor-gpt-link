@@ -41,6 +41,8 @@ Local subscription subagents also receive a missing parent Task entry before Cur
 
 OAuth models appear with a small OpenAI symbol before their names in the model picker, in their own **ChatGPT Subscription** section. Native Cursor models stay under **Cursor Models**. If cursor-claude-link is also installed, Claude models appear under **Claude Subscription**. Install ChatGPT first and Claude second. Remove them in reverse order because both modify the same Cursor files. The list comes from your local Codex model catalog, including each model's supported reasoning levels. The patch does not ship a fixed model list or grant access to models your account cannot use.
 
+Each subscription section shows Cursor's own usage label, such as "36% used", for the window closest to its limit; the bridge is queried at most once a minute.
+
 The model picker offers reasoning levels such as Low, Medium, High, Very high and Max when the model advertises them. Fast appears when the model metadata advertises a speed tier. Each reasoning level can be combined with Fast independently. Fast is off by default.
 
 A partial catalog refresh preserves previously seen models so entries such as Astra do not disappear just because one cache update omits them. An explicit hidden entry removes the model. The saved catalog is separated by account. A visible cached entry is not proof of current entitlement; the service still decides whether to accept a request.
