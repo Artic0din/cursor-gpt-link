@@ -1,6 +1,6 @@
 import {supportedBuild} from './supported-builds.mjs';
 import {CURSOR_VERSION} from './patch-symbols.mjs';
-import {buildPatches as buildCurrent} from './patches-3.21.13.mjs';
+import {buildPatches as buildCurrent} from './patches-3.22.12.mjs';
 
 const builders = {[CURSOR_VERSION]: buildCurrent};
 

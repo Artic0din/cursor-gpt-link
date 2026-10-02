@@ -82,7 +82,7 @@ function once(source, before, after) {
 // Minified identifiers per reviewed build: the subagent service used to cancel a
 // tree, and the untracked reader around the transcript conversation map.
 const lifecycleSymbols = {
-  '3.21.13': {desktop:{service:'pZe', untrack:'Xi'}, glass:{service:'lde', untrack:'Jr'}},
+  '3.22.12': {desktop:{service:'dQe', untrack:'rr'}, glass:{service:'zde', untrack:'hs'}},
 };
 
 export function patchSubagentLifecycle(source, surface, prefix, version) {
@@ -113,13 +113,10 @@ export function patchSubagentLifecycle(source, surface, prefix, version) {
   const stale = '(n===void 0||n.composer!=='+handle+')&&(n={composer:'+handle+',map:'+untrack+'(()=>'+handle+'.conversationMap)},this.cachedConversationMapRef=n);';
   source = once(source, stale, stale.replace(')&&(n=', '||('+handle+'.subagentInfo&&subscriptionComposer(this.composerDataService,this.composerId,__subscriptionSubagentPrefixes)&&n.map!=='+untrack+'(()=>'+handle+'.conversationMap)))&&(n='));
   // There are several transcript implementations; anchor the Solid composer one.
-  // Cursor 3.21.1 returns an empty disposable when the store is already gone;
-  // do not hydrate through a disposed store.
-  const matches = [...source.matchAll(/subscribeHeaders\((\w+)\)\{return (this\._store\.isDisposed\?[\w$]+\.None:)?([\w$]+)\(\(\)=>\{const (\w+)=this.getComposerDataForReactiveTracking\(\);/g)];
-  if (matches.length !== 1) throw new Error('Transcript subscription anchor is not unique');
-  const warm = 'warmSubscriptionTranscript(this,__subscriptionSubagentPrefixes);';
-  const hydrate = matches[0][2] ? 'if(!this._store.isDisposed)'+warm : warm;
-  source = once(source, matches[0][0], matches[0][0].replace('{return ', '{'+hydrate+'return '));
+  // Hydrate after its disposed-store guard so a disposed store is never warmed.
+  const guarded = [...source.matchAll(/subscribeHeaders\((\w+)\)\{if\(this\._store\.isDisposed\)return [\w$]+\.None;/g)];
+  if (guarded.length !== 1) throw new Error('Transcript subscription anchor is not unique');
+  source = once(source, guarded[0][0], guarded[0][0]+'warmSubscriptionTranscript(this,__subscriptionSubagentPrefixes);');
   source = once(source, 'dispose(){this.editDisplayCache.clear(),', 'dispose(){this.__subscriptionDisposed=true;this.editDisplayCache.clear(),');
   return 'var __subscriptionSubagentPrefixes='+JSON.stringify([prefix])+';\n'+
     [subscriptionComposer, subscriptionRequest, subscriptionRequestSignal, createSubscriptionSubagent, runSubscriptionSubagent, warmSubscriptionTranscript].map(fn=>fn.toString()).join('\n')+'\n'+source;

@@ -2,16 +2,18 @@
 
 ## Target macOS build
 
-This tree recognizes Cursor **3.21.13** only (`e44a49c17e334d442e58bbde931d791200f014a0`).
-[The Mac metadata](../src/supported-build-3.21.13.json) contains all six original-file hashes captured with `scripts/capture-hashes.mjs` from a signature-verified arm64 app on September 19, 2026.
+This tree recognizes Cursor **3.22.12** only (`3a92974361033b2051526321308c2740fe5912c0`).
+[The Mac metadata](../src/supported-build-3.22.12.json) contains all six original-file hashes captured with `scripts/capture-hashes.mjs` from a signature-verified arm64 app on October 1, 2026.
 Older Cursor versions are not install targets. Restore of an already patched app uses the existing installation manifest rather than that version's hash file.
 The minimum supported OS is macOS 26.
 
 ## Current checks
 
 All 106 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control subscription rejection, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
-The new-build acceptance test first reproduced rejection of 3.21.13 and now verifies that the captured build is recognized while a different commit is rejected.
-`node patcher.mjs check` verified the original installed 3.21.13 Mac app without modifying it.
+The build acceptance test verifies that the captured 3.22.12 build is recognized while a different commit is rejected.
+On October 1, 2026, `node scripts/verify-build.mjs` generated all six patch candidates from the signature-verified original 3.22.12 download and passed syntax, unique-anchor, native-behaviour and workbench-checksum checks.
+It first failed on the 3.22.12 transcript-subscription anchor (now an early return) and on the agent-exec activation anchor (renamed exports); both anchors are now matched by shape, not by minified name.
+The 3.21.13 results below are historical; installation, signing and live IDE testing on 3.22.12 are pending.
 `node scripts/verify-build.mjs` generated all six patch candidates and passed syntax, unique-anchor and workbench-checksum checks.
 It exercised both workbench surfaces and runtimes for subscription settings, login registration, routing, Explore selection, Task registration, subagent cancellation and transcripts, queued conversation actions, context/MAX and reasoning/Fast forwarding.
 AgentCompat regression tests reproduced the injected Agent Host strategy bypassing ChatGPT's local client, then verified per-model routing across regular, resumed and summarized turns.
@@ -69,7 +71,7 @@ Bridge checks alone do not establish complete Cursor UI coverage.
 2. Restore validates every resource backup before writing and re-signs the app before reporting success.
 3. Retry an interrupted restore while its manifest remains present; unknown file changes stop restoration.
 4. Reinstall official Cursor to recover its vendor signature or a failed signing operation.
-5. Install GPT followed by Claude on the recognized 3.21.13 Mac build; stale manifests are archived only after original files or a valid companion installation are verified.
+5. Install GPT followed by Claude on the recognized 3.22.12 Mac build; stale manifests are archived only after original files or a valid companion installation are verified.
 
 Never restore old resources over a newer build or edit hashes to bypass compatibility checks.
 A new Mac build needs original-file capture, a new table row and separate validation.
@@ -79,7 +81,7 @@ The six resource backups do not contain the original vendor code signature.
 
 Earlier September 10–18 notes were inherited from the Windows implementation and from the previous 3.20.17 Mac target.
 They described later Cursor builds, bridge tool calls, local and SSH file edits, image/PDF input, Explore settings, context and MAX mode, subagent lifecycle and queued follow-ups.
-They do not establish macOS installer coverage for 3.21.13.
+They do not establish macOS installer coverage for 3.22.12.
 The preceding test history remains in Git.
 
 Fresh macOS SSH file edits, live subagents, cancellation, fresh sign-in/renewal and other account layouts remain unverified.
