@@ -40,9 +40,9 @@ test('a started window never rounds down to zero, a full one stays at 100', () =
 
 // The helpers are shipped as source and run inside Cursor, so run them the
 // same way here: evaluate the generated text with a stub fetch and jsx.
-function runtime(response) {
+function runtime(response, clock) {
   const calls = [];
-  const globals = {Date, AbortSignal:{timeout:() => undefined}, console,
+  const globals = {Date:clock ? {now:() => clock.now} : Date, AbortSignal:{timeout:() => undefined}, console,
     fetch:(url, options) => { calls.push({url, options}); return Promise.resolve(response()); }};
   const scope = {};
   const factory = new Function(...Object.keys(globals), 'globalThis',
@@ -65,6 +65,22 @@ test('the section asks the bridge once and then shows what came back', async () 
   assert.equal(rendered.props.title, usageLabel(usageWindows(claude)).title);
   assert.equal(rendered.props.className, 'ui-4b2ntj ui-2lah0s');
   assert.equal(calls.length, 1, 'a second render within the minute does not ask again');
+});
+
+test('an answer with no usable windows keeps the label already shown', async () => {
+  const clock = {now:1000000};
+  let body = claude;
+  const {calls, api} = runtime(() => ok(body), clock);
+  const render = () => api.__subscriptionUsageTrailing('claude', jsx, 'http://127.0.0.1:43188', 'key');
+  render();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(render().props.children, '63% used');
+  clock.now += 61000;
+  body = {planType:'Max', windows:[]};
+  render();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 2, 'the refresh did run');
+  assert.equal(render().props.children, '63% used', 'a window-less answer does not blank the section');
 });
 
 test('a link that is not installed and a bridge that cannot answer stay silent', async () => {
