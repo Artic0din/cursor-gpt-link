@@ -52,7 +52,7 @@ function __subscriptionUsageRefresh(name, base, key) {
   state.pending = true;
   fetch(base + '/usage', {headers:{Authorization:'Bearer ' + key}, signal:AbortSignal.timeout(4000)})
     .then(r => r.ok ? r.json() : undefined)
-    .then(data => { if (data) state.value = __subscriptionUsageLabel(__subscriptionUsageWindows(data)); })
+    .then(data => { const label = data && __subscriptionUsageLabel(__subscriptionUsageWindows(data)); if (label) state.value = label; })
     .catch(() => {})
     .finally(() => { state.pending = false; state.checkedAt = Date.now(); });
 }
