@@ -9,7 +9,7 @@ The minimum supported OS is macOS 26.
 
 ## Current checks
 
-All 108 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control createAgent routing, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All 106 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control subscription rejection, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 The new-build acceptance test first reproduced rejection of 3.21.13 and now verifies that the captured build is recognized while a different commit is rejected.
 `node patcher.mjs check` verified the original installed 3.21.13 Mac app without modifying it.
 `node scripts/verify-build.mjs` generated all six patch candidates and passed syntax, unique-anchor and workbench-checksum checks.

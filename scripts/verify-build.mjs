@@ -44,10 +44,8 @@ try {
       if (features.max) verifyMaxMode(file.content);
       if (features.lifecycle) await verifySubagentLifecycle(file.content,['chatgpt-codex/']);
       await verifyWorkbenchRouting(file.content);
-      if (file.path.includes('workbench.glass.')) {
-        assert.match(file.content, /function __subscriptionRemoteControlEnvironment\(/);
-        assert.match(file.content, /=__subscriptionRemoteControlEnvironment\(/);
-      }
+      assert.match(file.content, /function __subscriptionRemoteControlGuard\(/);
+      assert.match(file.content, /\);__subscriptionRemoteControlGuard\([\w$]+\);/);
       if (features.settings) await verifySubagentSettingsWorkbench(file.content);
       if (features.bubbles) await verifySubagentRegistration(file.content);
       console.log('Native workbench SSH routing and workspace resources: passed');
