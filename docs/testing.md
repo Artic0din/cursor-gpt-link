@@ -9,11 +9,15 @@ The minimum supported OS is macOS 26.
 
 ## Current checks
 
-All 106 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control subscription rejection, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All 117 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control subscription rejection, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 The build acceptance test verifies that the captured 3.22.12 build is recognized while a different commit is rejected.
 On October 1, 2026, `node scripts/verify-build.mjs` generated all six patch candidates from the signature-verified original 3.22.12 download and passed syntax, unique-anchor, native-behaviour and workbench-checksum checks.
 It first failed on the 3.22.12 transcript-subscription anchor (now an early return) and on the agent-exec activation anchor (renamed exports); both anchors are now matched by shape, not by minified name.
-The 3.21.13 results below are historical; installation, signing and live IDE testing on 3.22.12 are pending.
+On October 1, 2026, GPT then Claude were installed into a signature-verified original 3.22.12 app, signed with an Apple Development identity, and both bridges started on launch.
+Restore refused to remove GPT before Claude, then Claude and GPT restored all six original hashes with a valid signature; both were reinstalled afterwards.
+In the native IDE, GPT-5.6-Terra wrote `gpt-smoke.txt` with exactly `GPT_32212_OK\n`, read it back and replied with that content.
+The Agents Window picker showed both subscription sections with usage labels, and submitting a subscription model on This Mac (Remote Control) showed the "Choose This Mac instead" error without creating a cloud agent.
+Agents Window agent runs, SSH and live subagent checks remain pending; the 3.21.13 results below are historical.
 `node scripts/verify-build.mjs` generated all six patch candidates and passed syntax, unique-anchor and workbench-checksum checks.
 It exercised both workbench surfaces and runtimes for subscription settings, login registration, routing, Explore selection, Task registration, subagent cancellation and transcripts, queued conversation actions, context/MAX and reasoning/Fast forwarding.
 AgentCompat regression tests reproduced the injected Agent Host strategy bypassing ChatGPT's local client, then verified per-model routing across regular, resumed and summarized turns.

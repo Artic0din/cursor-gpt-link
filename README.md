@@ -12,13 +12,13 @@ Windows and Linux are not supported.
 | --- | --- |
 | Cursor | 3.22.12, macOS 26+ (Apple Silicon, arm64) |
 | Latest Cursor commit | `3a92974361033b2051526321308c2740fe5912c0` (3.22.12) |
-| Latest local test date | October 1, 2026; original Mac hashes, unit tests and patch-candidate checks verified on 3.22.12 |
+| Latest local test date | October 1, 2026; install, restore, signing, bridges and native IDE write/read-back verified on 3.22.12 |
 | Node.js used for testing | 26.8.2 |
 | Codex CLI used for testing | 0.154.0 |
-| macOS signing | Original 3.22.12 download signature verified; patched-app signing and native loading pending |
-| Bridge startup | Verified on 3.21.13; not yet rechecked on 3.22.12 |
+| macOS signing | Installed 3.22.12 signature verified after install and after restore; native loading checked |
+| Bridge startup | Both installed bridges started automatically on launch; authenticated health checks passed |
 | Reasoning selection | Forwarding verified in both local runtimes |
-| IDE and Agents Window | Native IDE write/read-back passed on 3.21.13; live testing on 3.22.12 and the Agents Window is pending |
+| IDE and Agents Window | Native IDE write/read-back passed on 3.22.12 with GPT-5.6-Terra; Agents Window picker and Remote Control error checked; Agents Window agent runs pending |
 | Remote SSH sessions | Routing checked in both bundles; live macOS SSH testing is pending |
 | Agent Host runtime | Shared runtime supported; independent runtime temporarily unsupported |
 | Fast mode | Selector and request forwarding verified; actual priority processing not confirmed |
