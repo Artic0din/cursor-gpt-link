@@ -9,7 +9,7 @@ The minimum supported OS is macOS 26.
 
 ## Current checks
 
-All 106 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control subscription rejection, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
+All 117 local tests passed with Node.js 26.8.2, covering authentication, request normalization, context and MAX picker variants, subagent registration, Explore settings, conversation actions, Remote Control subscription rejection, legacy installation roots, installation/restore failures, CLI symlinks and startup after the launching host exits.
 The build acceptance test verifies that the captured 3.22.12 build is recognized while a different commit is rejected.
 On October 1, 2026, `node scripts/verify-build.mjs` generated all six patch candidates from the signature-verified original 3.22.12 download and passed syntax, unique-anchor, native-behaviour and workbench-checksum checks.
 It first failed on the 3.22.12 transcript-subscription anchor (now an early return) and on the agent-exec activation anchor (renamed exports); both anchors are now matched by shape, not by minified name.
